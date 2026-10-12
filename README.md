@@ -5,6 +5,7 @@ A living dex planner for Pokémon **Diamond, Pearl, Platinum, HeartGold and Soul
 ## Features
 
 - **Five games.** Switch between them in the header. Each game keeps its own boxes, starter choice and progress.
+- **PC boxes.** Your boxes laid out in dex order, 30 per box (6 × 5), with optional form slots and a choice of starting box. Tap a slot to mark it boxed; each Pokémon's detail panel shows its box, row and column.
 - **Route plan.** Catches are grouped by place and ordered by story progress, with copy counts ("×3" means catch three and evolve the extras). Shedinja doesn't cost an extra Nincada, and one-time gifts show how many you'll need to breed.
 - **Where I am now.** Pick your badge count to see what you can get now, dim what comes later, and optionally hide it.
 - **Catch right now.** Uses your device clock (Gen 4 periods: morning 4–10, day 10–20, night 20–4) and weekday to list everything you still need that appears at this moment, including Friday-only Drifloon and Lapras and the Bug-Catching Contest days.
@@ -30,6 +31,7 @@ A living dex planner for Pokémon **Diamond, Pearl, Platinum, HeartGold and Soul
 | `src/js/planner.js` | Planner logic (pure, no DOM): best route, plan groups, catch-right-now, forms |
 | `src/js/text.js`, `src/js/i18n.js` | Sentences and interface strings in English and Spanish |
 | `src/js/store.js`, `src/js/progress-code.js` | Saved state and sync codes |
+| `src/js/boxes.js` | PC box layout and slot positions (pure) |
 | `src/js/views/*.js`, `src/js/app.js` | The tabs, detail panel, sync panel and the controller |
 | `tests/` | Node tests for the planner, text and codes; Python tests for the pipeline |
 

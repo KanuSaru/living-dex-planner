@@ -8,12 +8,13 @@ import { esc } from './dom.js';
 import * as Plan from './views/plan.js';
 import * as Dex from './views/dex.js';
 import * as Forms from './views/forms.js';
+import * as Boxes from './views/boxes.js';
 import * as Areas from './views/areas.js';
 import * as Detail from './views/detail.js';
 import * as Sync from './views/sync.js';
 
-const TABS = ['plan', 'dex', 'forms', 'areas'];
-const VIEWS = { plan: Plan, dex: Dex, forms: Forms, areas: Areas };
+const TABS = ['plan', 'dex', 'boxes', 'forms', 'areas'];
+const VIEWS = { plan: Plan, dex: Dex, boxes: Boxes, forms: Forms, areas: Areas };
 const $ = (id) => document.getElementById(id);
 
 // ---------------------------------------------------------------- data sources
@@ -61,7 +62,7 @@ function buildCtx(data) {
     caught: new Set(gs.caught.map(String)),
     current: prev ? prev.current : null,
     openAreas: prev ? prev.openAreas : new Set(),
-    ui: prev ? prev.ui : { dexQuery: '', dexFilter: 'all', areaQuery: '', syncMsg: '', pasteDraft: '', syncOpen: false },
+    ui: prev ? prev.ui : { dexQuery: '', dexFilter: 'all', areaQuery: '', syncMsg: '', pasteDraft: '', syncOpen: false, boxGaps: false },
     now: new Date(),
     get lang() { return getLang(); },
     get period() { return periodAt(this.now); },
@@ -217,7 +218,11 @@ document.addEventListener('click', async (ev) => {
     case 'box': ev.stopPropagation(); toggleBox(el.dataset.key); break;
     case 'open': ctx.current = +el.dataset.id; renderDetail(); if (state.tab === 'dex') markCurrent(); break;
     case 'close': ctx.current = null; renderDetail(); if (state.tab === 'dex') markCurrent(); break;
-    case 'tab': state.tab = el.dataset.tab; save(); renderHeader(); renderTab(); break;
+    case 'tab': state.tab = TABS.includes(el.dataset.tab) ? el.dataset.tab : 'plan'; save(); renderHeader(); renderTab(); break;
+    case 'slot':
+      if (state.boxTap === 'open') { ctx.current = +el.dataset.id; renderDetail(); } else toggleBox(el.dataset.key);
+      break;
+    case 'box-tap': state.boxTap = el.dataset.tap; save(); renderTab(); break;
     case 'scope': ctx.gs.scope = el.dataset.scope; save(); renderAll(); break;
     case 'lang': state.lang = el.dataset.lang; setLang(state.lang); save(); renderAll(); break;
     case 'sync-open': ctx.ui.syncOpen = true; ctx.ui.syncMsg = ''; renderSync(); $('sync-code')?.focus(); break;
@@ -254,6 +259,9 @@ document.addEventListener('change', async (ev) => {
       save(); renderAll(); break;
     case 'only-now': ctx.gs.onlyNow = el.checked; save(); renderTab(); break;
     case 'hide': state.hide = el.checked; save(); renderAll(); break;
+    case 'box-forms': ctx.gs.boxForms = el.checked; save(); renderTab(); renderDetail(); break;
+    case 'box-start': ctx.gs.boxStart = +el.value; save(); renderTab(); renderDetail(); break;
+    case 'box-gaps': ctx.ui.boxGaps = el.checked; renderTab(); break;
     case 'dex-filter': ctx.ui.dexFilter = el.value; $('grid').innerHTML = Dex.grid(ctx); break;
     case 'area-sort': state.areaSort = el.value; save(); $('alist').innerHTML = Areas.list(ctx); break;
     case 'sync-file': {

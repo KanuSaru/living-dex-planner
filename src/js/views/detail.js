@@ -2,6 +2,7 @@
 import { t } from '../i18n.js';
 import { boxBtn, encounterTable, esc, pad3, pips, spr, statusChip } from '../dom.js';
 import { speciesForms } from './forms.js';
+import { positionFor } from './boxes.js';
 
 const TYPE_COLOR = { 1: '#a8a77a', 2: '#c22e28', 3: '#a98ff3', 4: '#a33ea1', 5: '#e2bf65', 6: '#b6a136', 7: '#a6b91a',
   8: '#735797', 9: '#b7b7ce', 10: '#ee8130', 11: '#6390f0', 12: '#7ac74c', 13: '#f7d02c', 14: '#f95587', 15: '#96d9d6',
@@ -56,7 +57,8 @@ export function render(ctx) {
   const b = P.best(s.id);
   const regional = s.rd != null ? `${esc(t('scope.regional', { region: t(`region.${data.game.region}`), n: '' }).trim().toUpperCase())} #${pad3(s.rd)} · ` : '';
   let h = `<div class="d-in"><div class="d-head">${spr(ctx, s.id)}<div class="d-title"><div class="no">${regional}${esc(t('scope.national', { n: '' }).trim().toUpperCase())} #${pad3(s.id)}</div><h2>${esc(T.species(s))}</h2><div class="types">${s.ty.map((ty) => `<span class="type" style="--tc:${TYPE_COLOR[ty] || '#999'}">${esc(T.type(ty))}</span>`).join('')}</div></div><button class="btn ghost" data-action="close">${t('detail.close')}</button></div>`;
-  h += `<div class="d-actions">${boxBtn(ctx, s.id, T.species(s), true)}${statusChip(ctx, s)}</div>`;
+  const pos = positionFor(ctx, s.id);
+  h += `<div class="d-actions">${boxBtn(ctx, s.id, T.species(s), true)}${statusChip(ctx, s)}${pos ? `<span class="note boxpos">${esc(t('detail.position', pos))}</span>` : ''}</div>`;
   if (b) {
     const label = b.ext ? t('detail.needs', { x: T.ext(b.ext) }) : t('detail.fastest');
     h += `<div class="best ${b.ext ? 'ext' : ''}"><span class="lbl">${esc(label)} · ${esc(T.stageTag(b.st))}</span><ol>${T.steps(b).map((x) => `<li>${x}</li>`).join('')}</ol></div>`;

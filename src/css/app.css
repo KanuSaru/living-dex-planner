@@ -68,7 +68,7 @@ textarea { width: 100%; resize: vertical; font-family: ui-monospace, "SFMono-Reg
 
 /* header */
 header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
-.top-in { max-width: 1400px; margin: 0 auto; padding-block: 14px 0; padding-inline: 16px; display: grid; gap: 12px; }
+.top-in { max-width: 1400px; margin: 0 auto; padding-block: 14px 0; padding-inline: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .brand { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 20px; justify-content: space-between; }
 .brand-text { min-width: 0; flex: 1 1 360px; }
 .brand h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(22px, 3.4vw, 32px); line-height: 1.05; margin: 0; letter-spacing: .01em; text-wrap: balance; }
@@ -81,7 +81,7 @@ header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; 
 .bar { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
 .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--ok)); transition: width .4s; }
 .controls { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; }
-.tabs { display: flex; gap: 2px; overflow-x: auto; max-width: 100%; }
+.tabs { display: flex; gap: 2px; overflow-x: auto; max-width: 100%; min-width: 0; }
 .tabs button { border: 0; background: none; padding: 10px 14px 11px; font-family: var(--f-display); font-weight: 600; font-size: 15px; color: var(--muted); border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
 .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .opt { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; padding-bottom: 10px; }
@@ -280,3 +280,32 @@ aside.detail { display: none; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* PC boxes */
+.warn { color: var(--crimson); font-weight: 700; margin: 0 0 12px; }
+.pcboxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 14px; }
+.pcbox { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; min-width: 0; }
+.pcbox.over { border-color: var(--crimson); }
+.pcbox-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 12px 8px; background: var(--surface-2); }
+.pcbox-count { margin-left: auto; font-family: var(--f-display); font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
+.bar.mini { flex-basis: 100%; height: 4px; }
+.pcbox-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; padding: 8px; }
+.slot { position: relative; aspect-ratio: 1; max-width: 100%; border-radius: 8px; border: 1.5px solid var(--line); background: var(--bg); padding: 0; cursor: pointer; display: grid; place-items: center; overflow: hidden; }
+.slot .spr { --z: clamp(34px, 9vw, 52px); filter: grayscale(1); opacity: .38; }
+.slot:hover { border-color: var(--accent); }
+.slot-no { position: absolute; left: 3px; bottom: 1px; font-family: var(--f-pixel); font-size: 9px; color: var(--muted); letter-spacing: .02em; }
+.slot.s-boxed { border-color: var(--ok); background: var(--ok-soft); }
+.slot.s-boxed .spr { filter: none; opacity: 1; }
+.slot.s-now { border-color: var(--accent); }
+.slot.s-later { border-style: dotted; }
+.slot.s-ext { border-color: var(--crimson); border-style: dashed; }
+.slot.s-none { border-style: dashed; opacity: .55; }
+.slot.s-blank { cursor: default; background: transparent; border-style: dotted; opacity: .4; }
+.slot.is-form .slot-no { color: var(--sky); }
+.legend .dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid var(--line); margin-right: 5px; vertical-align: -2px; background: var(--bg); }
+.legend .dot.s-boxed { border-color: var(--ok); background: var(--ok-soft); }
+.legend .dot.s-now { border-color: var(--accent); }
+.legend .dot.s-later { border-style: dotted; }
+.legend .dot.s-ext { border-color: var(--crimson); border-style: dashed; }
+.legend .dot.s-none { border-style: dashed; opacity: .55; }
+.boxpos { font-weight: 700; }
