@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createPlanner, periodAt, weekdayAt, condReady } from '../src/js/planner.js';
+import { createPlanner, periodAt, weekdayAt, condReady, lockOf } from '../src/js/planner.js';
 import { GAMES, loadGame, areaKey } from './helpers.mjs';
 
 const at = (h, m = 0) => new Date(2026, 9, 11, h, m); // 11 Oct 2026 is a Sunday
@@ -124,8 +124,9 @@ test('catch right now respects time, progress and weekday', () => {
   const data = loadGame('platinum');
   const P = createPlanner(data);
   const wanted = () => true;
-  const night = P.catchNow({ date: at(22), progress: 0, wanted });
-  const day = P.catchNow({ date: at(12), progress: 0, wanted });
+  const openAt = (p) => (story, gates) => !lockOf({ story, gates }, p, (g) => (data.game.gates[g] ?? 0) <= p);
+  const night = P.catchNow({ date: at(22), wanted, isOpen: openAt(0) });
+  const day = P.catchNow({ date: at(12), wanted, isOpen: openAt(0) });
   for (const g of [...night, ...day]) assert.ok(g.area.st <= 0, 'only start-of-game areas');
   const ids = (groups) => new Set(groups.flatMap((g) => g.items.map((i) => i.s.id)));
   // Kricketot (401) on Route 201 is morning and night only
@@ -133,8 +134,8 @@ test('catch right now respects time, progress and weekday', () => {
   assert.ok(!ids(day).has(401));
   // Drifloon (425) appears at Valley Windworks on Fridays only
   const friday = new Date(2026, 9, 16, 12);
-  assert.ok(ids(P.catchNow({ date: friday, progress: 9, wanted })).has(425));
-  assert.ok(!ids(P.catchNow({ date: at(12), progress: 9, wanted })).has(425));
+  assert.ok(ids(P.catchNow({ date: friday, wanted, isOpen: openAt(9) })).has(425));
+  assert.ok(!ids(P.catchNow({ date: at(12), wanted, isOpen: openAt(9) })).has(425));
 });
 
 test('form availability: Rotom forms are event-only in Platinum and trades in HeartGold', () => {
@@ -163,4 +164,63 @@ test('every game builds a plan without throwing', () => {
     const planned = plan.stages.reduce((n, s) => n + s.areas.reduce((m, a) => m + a.groups.reduce((k, g) => k + g.targets.length, 0), 0), 0);
     assert.equal(planned + plan.ext.length + plan.none.length, 493, id);
   }
+});
+
+test('gates: surfing needs Surf, and an area reached by water needs it too', () => {
+  const data = loadGame('platinum');
+  const P = createPlanner(data);
+  const has = (owned) => (g) => owned.includes(g);
+  const psyduckSurf = data.species.find((s) => s.id === 54).e.find((e) => e.m === 'surf');
+  assert.deepEqual(P.gatesOf(psyduckSurf), ['surf']);
+  const route221 = data.areas.find((a) => a.key === 'sinnoh-route-221');
+  assert.deepEqual(route221.gt, ['surf']);
+  const o = { story: 2, gates: ['surf'] };
+  assert.deepEqual(lockOf(o, 8, has([])), { gate: 'surf' });
+  assert.equal(lockOf(o, 8, has(['surf'])), null);
+  assert.deepEqual(lockOf(o, 1, has(['surf'])), { story: 2 });
+  assert.equal(lockOf(o, null, has([])), null);
+});
+
+test('Poké Radar encounters need the Poké Radar, not just badges', () => {
+  const data = loadGame('platinum');
+  const P = createPlanner(data);
+  const radar = data.species.flatMap((s) => (s.e || []).flatMap((e) => (e.sp || []).filter((sp) => sp.c.some((c) => c.k === 'radar')).map((sp) => ({ e, sp }))))[0];
+  assert.ok(radar, 'Platinum has Poké Radar encounters');
+  assert.ok(P.gatesOf(radar.e, radar.sp).includes('poke-radar'));
+});
+
+test('Diamond and Pearl use their own gym order', () => {
+  assert.equal(loadGame('diamond').game.stages[3].tag_en, 'Cobble Badge');
+  assert.equal(loadGame('platinum').game.stages[3].tag_en, 'Relic Badge');
+});
+
+test('copy counts: random Wurmple split and gender-only evolutions are flagged', () => {
+  const data = loadGame('platinum');
+  const P = createPlanner(data);
+  assert.ok(P.randomSplit.has(265), 'Wurmple');
+  assert.ok(!P.randomSplit.has(133), 'Eevee evolutions are chosen, not random');
+  const vespiquen = P.notesFor(P.best(416));
+  assert.deepEqual(vespiquen.map((n) => [n.k, n.g, n.pct]), [['gender', 'f', 12.5]]);
+  const gallade = P.notesFor(P.best(475));
+  assert.ok(gallade.some((n) => n.k === 'gender' && n.g === 'm' && n.pct === 50));
+});
+
+test('form copies add to the group of their species', () => {
+  const data = loadGame('platinum');
+  const P = createPlanner(data);
+  const list = data.species.filter((s) => s.id === 201);
+  const extraForms = data.forms.filter((f) => f.sp === 201 && !f.def);
+  const g = P.planGroups(list, new Set(), { extraForms }).stages.flatMap((s) => s.areas.flatMap((a) => a.groups))[0];
+  assert.equal(g.need, 28);
+  assert.equal(P.planGroups(list, new Set(['201', 'unown-b'])).stages.length, 1);
+});
+
+test('Nidoran and Volbeat/Illumise can be bred from their partner species', () => {
+  const P = createPlanner(loadGame('platinum'));
+  for (const id of [29, 32, 313, 314]) {
+    const b = P.options(id).find((o) => o.k === 'breed');
+    assert.ok(b, `breed option for ${id}`);
+  }
+  const vol = P.options(313).find((o) => o.k === 'breed');
+  assert.ok([313, 314].includes(vol.from));
 });

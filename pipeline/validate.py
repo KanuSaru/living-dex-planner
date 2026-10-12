@@ -17,9 +17,10 @@ def _json(path):
 
 KNOWN_METHODS = {'walk', 'surf', 'old-rod', 'good-rod', 'super-rod', 'rock-smash', 'headbutt', 'honey-tree',
                  'gift', 'gift-egg', 'static', 'roaming-grass', 'roaming-water', 'npc-trade', 'pokemon-ranger',
-                 'feebas-tile-fishing', 'pokeflute', 'squirt-bottle'}
+                 'feebas-tile-fishing', 'pokeflute', 'squirt-bottle', 'seaweed', 'devon-scope', 'wailmer-pail',
+                 'colosseum-bonus-disc-jpn', 'colosseum-bonus-disc-us', 'pokemon-channel-pal'}
 KNOWN_COND = {'swarm', 'radar', 'slot2', 'radio', 'natdex', 'story', 'other', 'weekday', 'honey', 'marsh', 'backlot',
-              'contest', 'coins', 'headbutt', 'safari', 'give', 'fossil', 'item', 'time'}
+              'contest', 'coins', 'headbutt', 'safari', 'give', 'fossil', 'item', 'time', 'tv', 'starter-was'}
 KNOWN_FORM_HOW = {'unown', 'alph', 'cloak', 'evo-cloak', 'sea', 'evo-sea', 'trade-in', 'rotom-room', 'griseous',
                   'gracidea', 'meteorite', 'plate', 'no-plate', 'spiky', 'default'}
 KNOWN_EXT = {'trade', 'gba', 'event', 'other'}
@@ -52,6 +53,16 @@ def check_game(gid, d, errors):
         if 'sub' in a and (not a['sub'].get('en') or not a['sub'].get('es')):
             err(f'area {a["key"]} sub-area label incomplete')
 
+    gates = d['game'].get('gates', {})
+    for a in d['areas']:
+        for g in a.get('gt', []):
+            if g not in gates:
+                err(f'area {a["key"]} uses unknown gate {g}')
+    for m, gs in d['game'].get('methodGates', {}).items():
+        for g in gs:
+            if g not in gates:
+                err(f'method {m} uses unknown gate {g}')
+
     def check_cond(c, where):
         if c.get('k') not in KNOWN_COND:
             err(f'{where}: unknown condition {c}')
@@ -69,6 +80,9 @@ def check_game(gid, d, errors):
                 err(f'{where}: wild encounter without rates')
             for c in e.get('req', []):
                 check_cond(c, where)
+            for g in e.get('gt', []) + [g for sp in e.get('sp', []) for g in sp.get('gt', [])]:
+                if g not in gates:
+                    err(f'{where}: unknown gate {g}')
             for sp in e.get('sp', []):
                 for c in sp['c']:
                     check_cond(c, where)

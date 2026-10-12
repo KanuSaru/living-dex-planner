@@ -44,6 +44,8 @@ export function createText(data) {
         case 'coins': return t('cond.coins', { n: c.n.toLocaleString(getLang()) });
         case 'safari': return t('cond.safari', { n: c.n, kind: t(`safari.${c.v}`) });
         case 'give': return c.s ? t('cond.give', { name: api.species(c.s) }) : t('cond.give.any');
+        case 'tv': return t(`cond.tv.${c.v}`);
+        case 'starter-was': return t('cond.starter-was', { name: api.species(c.s) });
         case 'fossil': return t('cond.fossil', { item: api.item(c.i) });
         case 'item': return t('cond.item', { item: api.item(c.i) });
         case 'time': return t(`cond.time.${c.v}`);
@@ -129,6 +131,7 @@ export function createText(data) {
       let line = t(o.needsDitto ? 'step.breed.ditto' : 'step.breed', { name: esc(api.species(o.s)), parent: esc(api.species(o.from)) });
       if (o.incense) line += t('step.breed.incense', { item: esc(api.item(o.incense)) });
       if (o.withoutIncense) line += t('step.breed.noIncense', { item: esc(api.item(o.withoutIncense)), name: esc(api.species(o.s)) });
+      if (o.either) line += t('step.breed.either', { a: esc(api.species(o.s)), b: esc(api.species(o.from)) });
       return [...api.steps(o.parent), line];
     },
   };

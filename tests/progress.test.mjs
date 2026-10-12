@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeProgress, encodeProgress, peekProgress } from '../src/js/progress-code.js';
-import { GAMES, loadGame } from './helpers.mjs';
+import { GEN4, loadGame } from './helpers.mjs';
 
-test('progress codes round-trip species and forms in every game', () => {
-  for (const id of GAMES) {
+test('progress codes round-trip species and forms in every Gen 4 game', () => {
+  for (const id of GEN4) {
     const data = loadGame(id);
     const forms = data.forms.filter((f) => !f.def).map((f) => f.key);
     const caught = new Set(['1', '25', '133', '201', '493', ...forms.slice(0, 3), forms.at(-1)]);

@@ -1,6 +1,6 @@
 // Boxes tab: your PC boxes in dex order, 30 per box, with optional form slots.
 import { t } from '../i18n.js';
-import { esc, isLater, pad3, sprAt } from '../dom.js';
+import { esc, isLater, lockFor, pad3, sprAt } from '../dom.js';
 import { BOX_COUNT, BOX_SIZE, boxSlots, layoutBoxes, positionOf } from '../boxes.js';
 
 export function slotsFor(ctx) {
@@ -13,24 +13,32 @@ export function positionFor(ctx, key) {
 
 function slotState(ctx, slot) {
   if (ctx.caught.has(slot.key)) return 'boxed';
-  const st = slot.form ? ctx.P.formStatus(slot.form) : ctx.P.best(slot.sp);
-  if (!st) return 'none';
-  if (st.ext) return 'ext';
-  return isLater(ctx, st.st) ? 'later' : 'now';
+  if (slot.form) {
+    const st = ctx.P.formStatus(slot.form);
+    if (!st) return 'none';
+    if (st.ext === 'trade' && ctx.M.formSource(slot.form)) return 'xfer';
+    if (st.ext) return 'ext';
+    return isLater(ctx, st.st) ? 'later' : 'now';
+  }
+  const b = ctx.M.best(slot.sp);
+  if (!b) return 'none';
+  if (b.via) return 'xfer';
+  if (b.o.ext) return 'ext';
+  return lockFor(ctx, b) ? 'later' : 'now';
 }
 
 function slotHTML(ctx, slot) {
   const { T } = ctx;
   const state = slotState(ctx, slot);
   const name = slot.form ? `${T.species(slot.sp)} · ${T.formName(slot.form)}` : T.species(slot.sp);
-  const label = { boxed: t('status.boxed'), now: t('filter.now'), later: t('boxes.later'), ext: t('filter.ext'), none: t('status.none') }[state];
+  const label = { boxed: t('status.boxed'), now: t('filter.now'), later: t('boxes.later'), xfer: t('filter.xfer'), ext: t('filter.ext'), none: t('status.none') }[state];
   const idx = slot.form ? slot.form.spr : slot.sp - 1;
   return `<button class="slot s-${state} ${slot.form ? 'is-form' : ''}" data-action="slot" data-key="${esc(slot.key)}" data-id="${slot.sp}" aria-pressed="${state === 'boxed'}" title="#${pad3(slot.no)} ${esc(name)} · ${esc(label)}" aria-label="#${pad3(slot.no)} ${esc(name)}, ${esc(label)}">${sprAt(idx, name)}<span class="slot-no">${slot.form ? '◆' : pad3(slot.no)}</span></button>`;
 }
 
 function legend() {
   const item = (cls, key) => `<span><i class="dot s-${cls}"></i>${t(key)}</span>`;
-  return `<div class="legend">${item('boxed', 'status.boxed')}${item('now', 'filter.now')}${item('later', 'boxes.later')}${item('ext', 'filter.ext')}${item('none', 'status.none')}</div>`;
+  return `<div class="legend">${item('boxed', 'status.boxed')}${item('now', 'filter.now')}${item('later', 'boxes.later')}${item('xfer', 'filter.xfer')}${item('ext', 'filter.ext')}${item('none', 'status.none')}</div>`;
 }
 
 export function render(ctx) {

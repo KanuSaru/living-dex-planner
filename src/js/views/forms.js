@@ -1,6 +1,6 @@
 // Forms tab: alternate forms per species, with how to get each one.
 import { t } from '../i18n.js';
-import { boxBtn, esc, isLater, pips, sprAt } from '../dom.js';
+import { boxBtn, esc, gameName, isLater, pips, sprAt } from '../dom.js';
 
 export function formCounts(ctx) {
   let a = 0, b = 0;
@@ -23,6 +23,7 @@ function formTile(ctx, f) {
   if (f.def) chip = `<span class="st plain">${t('forms.default')}</span>`;
   else if (boxed) chip = `<span class="st caught">${t('status.boxed')}</span>`;
   else if (!st) chip = `<span class="st none">${t('forms.unavailable')}</span>`;
+  else if (st.ext === 'trade' && ctx.M && ctx.M.formSource(f)) chip = `<span class="st xfer">${esc(t('status.from', { game: gameName(ctx, ctx.M.formSource(f)) }))}</span>`;
   else if (st.ext) chip = `<span class="st ext">${esc(T.ext(st.ext))}</span>`;
   else if (isLater(ctx, st.st)) chip = `<span class="st later">${t('status.later', { stage: esc(T.stage(st.st)) })}</span>`;
   else chip = `<span class="st catch">${esc(T.stage(st.st))}</span>`;

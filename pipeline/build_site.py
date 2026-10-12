@@ -52,7 +52,7 @@ def draw_icon(size, path, maskable=False):
 
 
 MANIFEST = {
-    'name': 'Platinum Living Dex',
+    'name': 'Living Dex Planner',
     'short_name': 'Living Dex',
     'description': 'Living dex planner for Pokémon Diamond, Pearl, Platinum, HeartGold and SoulSilver.',
     'start_url': './',

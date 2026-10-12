@@ -14,7 +14,7 @@ export function defaultLang() {
 
 export function freshState(defaultGame = 'platinum') {
   return { v: 2, lang: defaultLang(), game: defaultGame, tab: 'plan', hide: false, nowOpen: true,
-    areaSort: 'stage', boxTap: 'box', games: {} };
+    areaSort: 'stage', boxTap: 'box', owned: [], hw: { trade: true, gba: true }, setupDone: false, games: {} };
 }
 
 export function gameState(state, gameId) {
@@ -27,6 +27,7 @@ export function gameState(state, gameId) {
   g.onlyNow ??= false;
   g.boxForms ??= false;
   g.boxStart ??= 1;
+  g.gates ??= {};
   return g;
 }
 

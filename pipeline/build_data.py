@@ -13,9 +13,10 @@ from . import config as C
 from . import l10n
 from .pokeapi import EN, ES, PokeAPI
 
-GUARANTEED = {'gift', 'gift-egg', 'static', 'roaming-grass', 'roaming-water', 'npc-trade', 'pokemon-ranger',
-              'squirt-bottle', 'pokeflute'}
-ONE_TIME = {'gift', 'gift-egg', 'static', 'npc-trade', 'pokemon-ranger', 'squirt-bottle', 'pokeflute'}
+EVENT_METHODS = {'pokemon-ranger', 'colosseum-bonus-disc-jpn', 'colosseum-bonus-disc-us', 'pokemon-channel-pal'}
+GUARANTEED = {'gift', 'gift-egg', 'static', 'roaming-grass', 'roaming-water', 'npc-trade', 'squirt-bottle',
+              'pokeflute', 'wailmer-pail'} | EVENT_METHODS
+ONE_TIME = {'gift', 'gift-egg', 'static', 'npc-trade', 'squirt-bottle', 'pokeflute', 'wailmer-pail'} | EVENT_METHODS
 PERIODS = {'time-morning': 'm', 'time-day': 'd', 'time-night': 'n'}
 PLATE_FOR_TYPE = {'fighting': 'fist-plate', 'flying': 'sky-plate', 'poison': 'toxic-plate', 'ground': 'earth-plate',
                   'rock': 'stone-plate', 'bug': 'insect-plate', 'ghost': 'spooky-plate', 'steel': 'iron-plate',
@@ -121,13 +122,24 @@ class GameBuilder:
             if iid:
                 c['i'] = int(iid)
                 self.used_items.add(iid)
-        if c['k'] == 'give':
+        if c['k'] in ('give', 'starter-was'):
             if c['v'] == 'any-pokemon':
                 c['s'] = 0
             else:
                 sid = next((k for k, v in self.S.species.items() if v['identifier'] == c['v']), None)
                 c['s'] = int(sid) if sid else 0
-        return c, st, ext
+        gate = C.COND_GATE.get(c['k'])
+        if gate not in self.R['gates']:
+            gate = None
+        return c, (0 if gate else st), ext, gate
+
+    def method_stage(self, method):
+        return max([self.R['gates'][g] for g in self.R['method_gates'].get(method, [])], default=0)
+
+    def stages(self):
+        if self.g.get('badges') == 'dp':
+            return C._badge_stages(C.DP_BADGES) + self.R['stages'][len(C.DP_BADGES) + 1:]
+        return self.R['stages']
 
     # ------------------------------------------------------------------ areas
     def build_area(self, area_id):
@@ -152,6 +164,10 @@ class GameBuilder:
             sub_es = raw
         stage = self.R['areas'].get((ident, ar['identifier']), self.loc_stage(ident))
         out = {'id': int(area_id), 'loc': int(ar['location_id']), 'key': ident, 'st': stage}
+        ag = self.R.get('area_gates', {})
+        gates = ag.get((ident, ar['identifier'] or None)) or ag.get((ident, None))
+        if gates:
+            out['gt'] = gates
         if raw:
             out['sub'] = {'en': l10n.tidy_sub_en(raw), 'es': sub_es[:1].upper() + sub_es[1:]}
         if self.region_key == 'sinnoh':
@@ -201,34 +217,38 @@ class GameBuilder:
                 areas[a] = self.build_area(a)
             item = {'a': int(a), 'm': m, 'lv': [min(int(r['min_level']) for r in rs), max(int(r['max_level']) for r in rs)]}
             if m in GUARANTEED:
-                req, st, ext = [], 0, set()
+                req, st, ext, gates = [], 0, set(), set()
                 for r in rs:
                     for cid in S.cond_map[r['id']]:
                         if cid in S.defaults:
                             continue
                         ident = S.cond_vals[cid]['identifier']
                         if ident in PERIODS:
-                            c, cst, cext = {'k': 'time', 'v': PERIODS[ident]}, 0, None
+                            c, cst, cext, cgate = {'k': 'time', 'v': PERIODS[ident]}, 0, None, None
                         else:
                             parsed = self.cond(cid)
                             if not parsed:
                                 continue
-                            c, cst, cext = parsed
+                            c, cst, cext, cgate = parsed
                         if c not in req:
                             req.append(c)
+                        if cgate:
+                            gates.add(cgate)
                         st = max(st, cst)
                         if cext:
                             ext.add(cext)
                 wd = C.EXTRA_WEEKDAY.get((self.id, int(sp), areas[a]['key']))
                 if wd and {'k': 'weekday', 'v': wd} not in req:
                     req.append({'k': 'weekday', 'v': wd})
-                if m == 'pokemon-ranger' or int(sp) in C.EVENT_SPECIES:
+                if m in EVENT_METHODS or int(sp) in C.EVENT_SPECIES or areas[a]['key'] in C.EVENT_LOCATIONS:
                     ext.add('event')
                 item['g'] = 1
                 if req:
                     item['req'] = req
                 if st:
                     item['cst'] = st
+                if gates:
+                    item['gt'] = sorted(gates)
                 if ext:
                     item['ext'] = sorted(ext)
                 if m in ONE_TIME and not any(c['k'] in ('fossil', 'coins') for c in req):
@@ -257,6 +277,9 @@ class GameBuilder:
                     key = json.dumps(conds, sort_keys=True)
                     if key not in specials or specials[key]['p'] < best:
                         entry = {'c': conds, 'p': best, 'st': max(p[1] for p in parsed)}
+                        gts = sorted({p[3] for p in parsed if p[3]})
+                        if gts:
+                            entry['gt'] = gts
                         ext = [p[2] for p in parsed if p[2]]
                         if ext:
                             entry['ext'] = ext[0]
@@ -308,9 +331,11 @@ class GameBuilder:
                 if not self.R['beauty']:
                     ext = 'trade'
                 else:
-                    st = max(st, 2)
+                    st = max(st, self.R.get('beauty_stage', 2))
             if r['time_of_day']:
                 e['tod'] = 'd' if r['time_of_day'] == 'day' else 'n'
+                if not self.R.get('clock', True):
+                    ext = 'trade'  # no clock in this game (FireRed/LeafGreen)
             if r['gender_id']:
                 e['g'] = 'f' if r['gender_id'] == '1' else 'm'
             if r['relative_physical_stats']:
@@ -330,6 +355,8 @@ class GameBuilder:
     # ------------------------------------------------------------------ forms
     def build_forms(self, encounters, areas, sprite_index):
         S = self.S
+        if self.R.get('forms') is False:
+            return []
         by_species = collections.defaultdict(list)
         for f in S.forms:
             p = S.pokemon[f['pokemon_id']]
@@ -387,7 +414,7 @@ class GameBuilder:
                 for e in encounters.get(species, []):
                     a = areas[str(e['a'])]
                     if a.get('side') == side:
-                        s = max(a['st'], R['method_stage'].get(e['m'], 0))
+                        s = max([a['st'], self.method_stage(e['m'])] + [R['gates'][g] for g in a.get('gt', [])])
                         st = s if st is None else min(st, s)
                 return st
             how, stages = [], []
@@ -493,10 +520,11 @@ class GameBuilder:
         area_list = sorted(areas.values(), key=lambda a: (a['st'], locs[str(a['loc'])]['en'], a.get('sub', {}).get('en', '')))
         R = self.R
         return {
-            'game': {'id': self.id, 'name': self.g['name'], 'short': self.g['short'], 'region': self.region_key,
+            'game': {'id': self.id, 'gen': self.g['gen'], 'name': self.g['name'], 'short': self.g['short'], 'region': self.region_key,
                      'sprites': self.g['sprites'], 'regionalSize': len(regional),
-                     'stages': R['stages'], 'dayCareStage': R['day_care_stage'], 'levelCaps': R['level_caps'],
-                     'starterGroups': R['starter_groups'], 'methodStage': R['method_stage']},
+                     'stages': self.stages(), 'dayCareStage': R['day_care_stage'], 'levelCaps': R['level_caps'],
+                     'starterGroups': R['starter_groups'], 'gates': R['gates'], 'methodGates': R['method_gates'],
+                     'methodStage': {m: self.method_stage(m) for m in R['method_gates']}},
             'species': species,
             'areas': area_list,
             'forms': forms,
@@ -509,6 +537,8 @@ def form_sprite_files(shared, game_ids):
     out = collections.OrderedDict()
     for gid in game_ids:
         g = C.GAMES[gid]
+        if C.REGIONS[g['region']].get('forms') is False:
+            continue
         vg_order = shared.vg_order[str(g['vg'])]
         for f in shared.forms:
             p = shared.pokemon[f['pokemon_id']]
@@ -563,7 +593,8 @@ def main(argv):
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
         problems += [f'{gid}: {p}' for p in dict.fromkeys(gb.problems)]
-        index['games'].append({'id': gid, 'name': C.GAMES[gid]['name'], 'short': C.GAMES[gid]['short'],
+        index['games'].append({'id': gid, 'gen': C.GAMES[gid]['gen'], 'main': C.GAMES[gid]['gen'] == 4,
+                               'name': C.GAMES[gid]['name'], 'short': C.GAMES[gid]['short'],
                                'sprites': C.GAMES[gid]['sprites']})
         print(f'{gid}: {sum(1 for s in data["species"] if "e" in s)} species with encounters, '
               f'{len(data["areas"])} areas, {len(data["forms"])} forms, {os.path.getsize(path) // 1024} KB')

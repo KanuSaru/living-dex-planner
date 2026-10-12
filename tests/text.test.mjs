@@ -54,6 +54,16 @@ for (const lang of ['en', 'es']) {
   });
 }
 
+test('every gate has a name in both languages', () => {
+  for (const lang of ['en', 'es']) {
+    for (const id of GAMES) {
+      for (const g of Object.keys(loadGame(id).game.gates || {})) {
+        assert.ok(STRINGS[lang][`gate.${g}`], `${lang}: gate.${g}`);
+      }
+    }
+  }
+});
+
 test('evolution sentences read naturally', () => {
   const data = loadGame('platinum');
   const T = createText(data);

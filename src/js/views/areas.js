@@ -1,6 +1,6 @@
 // Areas tab: every place with encounters, how many Pokémon you still need there, and its full table.
 import { t } from '../i18n.js';
-import { encounterTable, esc, isLater, pips, spr } from '../dom.js';
+import { encounterTable, esc, gateNames, lockChip, lockFor, pips, spr } from '../dom.js';
 
 export function areaTableHTML(ctx, areaId) {
   const rows = [...(ctx.areaSpecies.get(areaId) || [])].sort((x, y) => x.s.id - y.s.id || x.e.m.localeCompare(y.e.m));
@@ -26,7 +26,8 @@ export function list(ctx) {
   let h = '';
   for (const x of rows) {
     const open = ctx.openAreas.has(x.a.id);
-    h += `<details class="ar ${isLater(ctx, x.a.st) ? 'locked' : ''}" data-area="${x.a.id}" ${open ? 'open' : ''}><summary>${pips(ctx, x.a.st)}<b>${esc(T.loc(x.a.loc))}</b>${x.a.sub ? `<small>${esc(T.areaSub(x.a))}</small>` : ''}<span class="minis">${x.ids.slice(0, 6).map((id) => spr(ctx, id)).join('')}</span><small>${t('areas.species', { n: x.ids.length })}</small><span class="need">${isLater(ctx, x.a.st) ? `<span class="st later">${t('plan.locked')}</span> ` : ''}${x.need.size ? `<span class="st catch">${t('areas.need', { n: x.need.size })}</span>` : `<span class="st caught">${t('areas.nothing')}</span>`}</span></summary>${open ? areaTableHTML(ctx, x.a.id) : ''}</details>`;
+    const lock = lockFor(ctx, { story: x.a.st, gates: x.a.gt || [] });
+    h += `<details class="ar ${lock ? 'locked' : ''}" data-area="${x.a.id}" ${open ? 'open' : ''}><summary>${pips(ctx, x.a.st)}<b>${esc(T.loc(x.a.loc))}</b>${x.a.sub ? `<small>${esc(T.areaSub(x.a))}</small>` : ''}${x.a.gt ? `<small class="gates">${esc(gateNames(x.a.gt))}</small>` : ''}<span class="minis">${x.ids.slice(0, 6).map((id) => spr(ctx, id)).join('')}</span><small>${t('areas.species', { n: x.ids.length })}</small><span class="need">${lock ? lockChip(ctx, lock) + ' ' : ''}${x.need.size ? `<span class="st catch">${t('areas.need', { n: x.need.size })}</span>` : `<span class="st caught">${t('areas.nothing')}</span>`}</span></summary>${open ? areaTableHTML(ctx, x.a.id) : ''}</details>`;
   }
   return h || `<div class="empty">${t('areas.empty')}</div>`;
 }

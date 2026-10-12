@@ -1,5 +1,6 @@
 // Small HTML helpers shared by the views.
 import { t } from './i18n.js';
+import { lockOf } from './planner.js';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const pad3 = (n) => String(n).padStart(3, '0');
@@ -25,13 +26,46 @@ export function isLater(ctx, st) {
   return ctx.gs.progress != null && st > ctx.gs.progress;
 }
 
+// a field move or key item you have: ticked by you, or normal for your badge count
+export function hasGate(ctx, g) {
+  const own = (ctx.gs.gates || {})[g];
+  if (own != null) return own;
+  return ctx.gs.progress != null && ((ctx.data.game.gates || {})[g] ?? 0) <= ctx.gs.progress;
+}
+// why x ({story, gates}) is out of reach at your progress, or null
+export function lockFor(ctx, x) {
+  return lockOf(x, ctx.gs.progress, (g) => hasGate(ctx, g));
+}
+export function lockText(ctx, lock) {
+  if (!lock) return '';
+  return lock.gate ? t('lock.gate', { x: t(`gate.${lock.gate}`) }) : t('status.later', { stage: ctx.T.stage(lock.story) });
+}
+export function lockChip(ctx, lock) {
+  return lock ? `<span class="st later">${esc(lockText(ctx, lock))}</span>` : '';
+}
+export const gateNames = (gates) => (gates || []).map((g) => t(`gate.${g}`)).join(' · ');
+
+// a view context for another game you own (its own planner, names and stages; no progress filter)
+export function sourceCtx(ctx, src) {
+  return { ...ctx, data: src.data, P: src.P, T: src.T, gs: { ...ctx.gs, progress: null, onlyNow: false },
+    areaSpecies: src.P.areaSpecies() };
+}
+
+export function gameName(ctx, id) {
+  const m = ctx.metaOf ? ctx.metaOf(id) : null;
+  return m ? m.name[ctx.lang] || m.name.en : id;
+}
+
 export function statusChip(ctx, s) {
   const id = s.id;
   if (ctx.caught.has(String(id))) return `<span class="st caught">${t('status.boxed')}</span>`;
-  const b = ctx.P.best(id);
+  const m = ctx.M ? ctx.M.best(id) : null;
+  if (m && m.via) return `<span class="st xfer">${esc(t('status.from', { game: gameName(ctx, m.where) }))}</span>`;
+  const b = m ? m.o : ctx.P.best(id);
   if (!b) return `<span class="st none">${t('status.none')}</span>`;
   if (b.ext) return `<span class="st ext">${esc(ctx.T.ext(b.ext))}</span>`;
-  if (isLater(ctx, b.st)) return `<span class="st later">${t('status.later', { stage: esc(ctx.T.stage(b.st)) })}</span>`;
+  const lock = lockFor(ctx, m || b);
+  if (lock) return lockChip(ctx, lock);
   const cls = { catch: 'catch', evolve: 'evolve', breed: 'breed' }[b.k] || 'catch';
   return `<span class="st ${cls}">${t(`status.${b.k}`)}</span>`;
 }
@@ -67,7 +101,8 @@ export function encounterTable(ctx, rows, { firstCol = 'pokemon' } = {}) {
   for (const { s, e } of rows) {
     const a = P.A.get(e.a);
     const est = P.effStage(e);
-    const locked = isLater(ctx, est);
+    const gates = P.gatesOf(e);
+    const locked = lockFor(ctx, { story: Math.max(a.st, e.cst || 0), gates });
     let first;
     if (firstCol === 'pokemon') {
       first = `<button class="pk linkish" data-action="open" data-id="${s.id}">${spr(ctx, s.id)}${esc(T.species(s))}${ctx.caught.has(String(s.id)) ? ' <span class="st caught">✓</span>' : ''}</button>`;
@@ -75,7 +110,7 @@ export function encounterTable(ctx, rows, { firstCol = 'pokemon' } = {}) {
       first = `<div class="strong">${esc(T.loc(a.loc))}</div>${a.sub ? `<div class="note">${esc(T.areaSub(a))}</div>` : ''}<div>${pips(ctx, est)} <span class="stagelbl">${esc(T.stage(est))}</span></div>`;
     }
     const mst = (ctx.data.game.methodStage || {})[e.m] || 0;
-    h += `<tr class="${locked ? 'locked' : ''}"><td>${first}</td><td>${esc(T.method(e.m))}${firstCol === 'pokemon' && mst > a.st ? `<div class="stagelbl">${esc(T.stage(mst))}</div>` : ''}</td><td class="num">${lvText(e)}</td><td>${chanceCells(ctx, e)}</td><td>${condCells(ctx, e)}</td></tr>`;
+    h += `<tr class="${locked ? 'locked' : ''}"><td>${first}</td><td>${esc(T.method(e.m))}${gates.length ? `<div class="stagelbl gates">${esc(gateNames(gates))}</div>` : firstCol === 'pokemon' && mst > a.st ? `<div class="stagelbl">${esc(T.stage(mst))}</div>` : ''}</td><td class="num">${lvText(e)}</td><td>${chanceCells(ctx, e)}</td><td>${condCells(ctx, e)}</td></tr>`;
   }
   return h + '</tbody></table></div>';
 }

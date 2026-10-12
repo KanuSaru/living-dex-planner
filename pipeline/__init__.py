@@ -1,4 +1,4 @@
-"""Build pipeline for the Gen 4 Living Dex planner.
+"""Build pipeline for the Living Dex Planner.
 
 Modules:
     pokeapi     -- reads PokéAPI's CSV source data

@@ -1,10 +1,11 @@
-# Platinum Living Dex
+# Living Dex Planner
 
-A living dex planner for Pokémon **Diamond, Pearl, Platinum, HeartGold and SoulSilver**, built from [PokéAPI](https://pokeapi.co/) data. For every Pokémon it shows every place it appears (levels, morning/day/night rates, special conditions), its evolution family, and its alternate forms. It also builds a route plan that picks the earliest way to get each one: catch it, evolve it or breed it.
+A living dex planner for Pokémon **Diamond, Pearl, Platinum, HeartGold and SoulSilver**, with Ruby, Sapphire, Emerald, FireRed and LeafGreen as sources through Pal Park,, built from [PokéAPI](https://pokeapi.co/) data. For every Pokémon it shows every place it appears (levels, morning/day/night rates, special conditions), its evolution family, and its alternate forms. It also builds a route plan that picks the earliest way to get each one: catch it, evolve it or breed it.
 
 ## Features
 
-- **Five games.** Switch between them in the header. Each game keeps its own boxes, starter choice and progress.
+- **My games.** Pick the game your living dex lives in (Diamond, Pearl, Platinum, HeartGold or SoulSilver) and the other games you own, including Ruby, Sapphire, Emerald, FireRed and LeafGreen. Each main game keeps its own boxes, starter choice and progress.
+- **Plan across your games.** Whatever your main game can't get is planned in your other games: trades from your other DS games (including trade evolutions), and Pal Park from your GBA games after the National Dex. Owning a GBA game also unlocks its dual-slot encounters in Diamond, Pearl and Platinum.
 - **PC boxes.** Your boxes laid out in dex order, 30 per box (6 × 5), with optional form slots and a choice of starting box. Tap a slot to mark it boxed; each Pokémon's detail panel shows its box, row and column.
 - **Route plan.** Catches are grouped by place and ordered by story progress, with copy counts ("×3" means catch three and evolve the extras). Shedinja doesn't cost an extra Nincada, and one-time gifts show how many you'll need to breed.
 - **Where I am now.** Pick your badge count to see what you can get now, dim what comes later, and optionally hide it.
@@ -32,6 +33,7 @@ A living dex planner for Pokémon **Diamond, Pearl, Platinum, HeartGold and Soul
 | `src/js/text.js`, `src/js/i18n.js` | Sentences and interface strings in English and Spanish |
 | `src/js/store.js`, `src/js/progress-code.js` | Saved state and sync codes |
 | `src/js/boxes.js` | PC box layout and slot positions (pure) |
+| `src/js/multi.js` | Picks the best game for each Pokémon across the games you own (pure) |
 | `src/js/views/*.js`, `src/js/app.js` | The tabs, detail panel, sync panel and the controller |
 | `tests/` | Node tests for the planner, text and codes; Python tests for the pipeline |
 

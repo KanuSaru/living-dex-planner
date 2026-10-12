@@ -1,10 +1,10 @@
 // Pokédex tab: searchable grid of every species in scope.
 import { t } from '../i18n.js';
-import { boxBtn, esc, isLater, pad3, spr, statusChip } from '../dom.js';
+import { boxBtn, esc, lockFor, pad3, spr, statusChip } from '../dom.js';
 
 export function toolbar(ctx) {
   const f = ctx.ui.dexFilter;
-  const opts = ['all', 'catch', 'evolve', 'breed', 'ext', 'none', 'todo'];
+  const opts = ['all', 'catch', 'evolve', 'breed', ...(ctx.M.sources.length ? ['xfer'] : []), 'ext', 'none', 'todo'];
   if (ctx.gs.progress != null) opts.push('now');
   return `<div class="toolbar"><input class="search" id="q" type="search" data-action="dex-search" placeholder="${esc(t('dex.search'))}" aria-label="${esc(t('dex.search'))}" value="${esc(ctx.ui.dexQuery)}">
     <select id="fStatus" data-action="dex-filter" aria-label="${esc(t('filter.all'))}">${opts.map((o) => `<option value="${o}" ${f === o ? 'selected' : ''}>${t(`filter.${o}`)}</option>`).join('')}</select></div>`;
@@ -22,8 +22,8 @@ export function grid(ctx) {
     if (ctx.state.hide && boxed) return false;
     if (q && !(T.species(s).toLowerCase().includes(q) || s.n.toLowerCase().includes(q) || String(s.id) === num || String(ctx.dexNo(s)) === num)) return false;
     if (f === 'todo') return !boxed;
-    if (f === 'now') { const b = P.best(s.id); return !boxed && b && !b.ext && !isLater(ctx, b.st); }
-    if (f !== 'all' && P.status(s.id) !== f) return false;
+    if (f === 'now') { const b = ctx.M.best(s.id); return !boxed && b && (b.via || !b.o.ext) && !lockFor(ctx, b); }
+    if (f !== 'all' && ctx.M.status(s.id) !== f) return false;
     return true;
   });
   let h = '';

@@ -10,6 +10,10 @@ import re
 FORM_NAME_ES = {'pichu-spiky-eared': 'Picoreja'}
 
 LOCATION_EN_OVERRIDE = {
+    'roaming-hoenn': 'Roaming Hoenn',
+    'roaming-kanto': 'Roaming Kanto',
+    'hoenn-pokecenter': 'Event',
+    'kanto-pokecenter': 'Event',
     'roaming-sinnoh': 'Roaming Sinnoh',
     'roaming-johto': 'Roaming Johto',
     'sinnoh-pokemart': 'Event',
@@ -49,6 +53,40 @@ LOCATION_ES = {
     'goldenrod-city': 'Ciudad Trigal', 'team-rocket-hq': 'Guarida Rocket', 'sinjoh-ruins': 'Ruinas de Sinjoh',
     'embedded-tower': 'Torre Oculta', 'roaming-johto': 'Errante por Johto', 'johto-safari-zone': 'Zona Safari',
     'safari-zone-gate': 'Entrada de la Zona Safari', 'johto-pokemart': 'Evento', 'mahogany-town': 'Pueblo Caoba',
+    # Hoenn (Gen 3 Spanish releases)
+    'littleroot-town': 'Villa Raíz', 'oldale-town': 'Pueblo Escaso', 'petalburg-city': 'Ciudad Petalia',
+    'rustboro-city': 'Ciudad Férrica', 'dewford-town': 'Pueblo Azuliza', 'slateport-city': 'Ciudad Portual',
+    'mauville-city': 'Ciudad Malvalona', 'verdanturf-town': 'Pueblo Verdegal', 'lavaridge-town': 'Pueblo Lavacalda',
+    'fallarbor-town': 'Pueblo Pardal', 'fortree-city': 'Ciudad Arborada', 'lilycove-city': 'Ciudad Calagua',
+    'mossdeep-city': 'Ciudad Algaria', 'sootopolis-city': 'Arrecípolis', 'pacifidlog-town': 'Pueblo Oromar',
+    'ever-grande-city': 'Ciudad Colosalia', 'meteor-falls': 'Cascada Meteoro', 'rusturf-tunnel': 'Túnel Fervergal',
+    'granite-cave': 'Cueva Granito', 'petalburg-woods': 'Bosque Petalia', 'jagged-pass': 'Desfiladero',
+    'fiery-path': 'Senda Ígnea', 'mt-pyre': 'Monte Pírico', 'seafloor-cavern': 'Caverna Abisal',
+    'cave-of-origin': 'Cueva Ancestral', 'hoenn-victory-road': 'Calle Victoria', 'shoal-cave': 'Cueva Cardumen',
+    'new-mauville': 'Malvalanova', 'abandoned-ship': 'Nao Abandonada', 'sky-pillar': 'Pilar Celeste',
+    'hoenn-safari-zone': 'Zona Safari', 'magma-hideout': 'Guarida del Equipo Magma', 'mirage-tower': 'Torre Espejismo',
+    'desert-underpass': 'Gruta Desértica', 'artisan-cave': 'Cueva Taller', 'hoenn-altering-cave': 'Cueva Cambiante',
+    'southern-island': 'Isla del Sur', 'island-cave': 'Cueva Insular', 'desert-ruins': 'Ruinas del Desierto',
+    'ancient-tomb': 'Tumba Antigua', 'team-aqua-hideout': 'Guarida del Equipo Aqua',
+    'team-magma-hideout': 'Guarida del Equipo Magma', 'roaming-hoenn': 'Errante por Hoenn', 'terra-cave': 'Cueva Terrena',
+    'marine-cave': 'Cueva Marina', 'birth-island': 'Isla Origen', 'navel-rock': 'Roca Ombligo',
+    'faraway-island': 'Isla Suprema', 'hoenn-battle-frontier': 'Frente Batalla', 'hoenn-pokecenter': 'Evento',
+    'mirage-island': 'Isla Espejismo',
+    # Sevii Islands and FireRed/LeafGreen-only places
+    'one-island': 'Isla Prima', 'four-island': 'Isla Quarta', 'five-island': 'Isla Inta', 'mt-ember': 'Monte Ascuas',
+    'berry-forest': 'Bosque Baya', 'icefall-cave': 'Cueva Glaciada', 'pattern-bush': 'Bosquejo',
+    'lost-cave': 'Cueva Perdida', 'kindle-road': 'Camino Candente', 'treasure-beach': 'Playa Tesoro',
+    'cape-brink': 'Cabo Extremo', 'bond-bridge': 'Puente Unión', 'three-isle-port': 'Puerto Isla Tera',
+    'resort-gorgeous': 'Lugar de Recreo', 'water-labyrinth': 'Aquarinto', 'five-isle-meadow': 'Prado Isla Inta',
+    'memorial-pillar': 'Pilar Recuerdo', 'outcast-island': 'Isla Aislada', 'green-path': 'Vía Verde',
+    'water-path': 'Vía Acuática', 'ruin-valley': 'Valle Ruinas', 'trainer-tower': 'Torre Desafío',
+    'canyon-entrance': 'Entrada al Cañón', 'sevault-canyon': 'Cañón Sétano', 'tanoby-ruins': 'Ruinas Sete',
+    'monean-chamber': 'Cámara Monean', 'liptoo-chamber': 'Cámara Liptoo', 'weepth-chamber': 'Cámara Weepth',
+    'dilford-chamber': 'Cámara Dilford', 'scufib-chamber': 'Cámara Scufib', 'rixy-chamber': 'Cámara Rixy',
+    'viapos-chamber': 'Cámara Viapos', 'kanto-altering-cave': 'Cueva Cambiante', 'roaming-kanto': 'Errante por Kanto',
+    'kanto-pokecenter': 'Evento', 'pokemon-tower': 'Torre Pokémon', 'pokemon-mansion': 'Mansión Pokémon',
+    'kanto-safari-zone': 'Zona Safari', 'ss-anne': 'S.S. Anne', 'kanto-victory-road-2': 'Calle Victoria',
+    'kanto-underground-path': 'Vía Subterránea',
     # Kanto
     'celadon-city': 'Ciudad Azulona', 'cerulean-city': 'Ciudad Celeste', 'cinnabar-island': 'Isla Canela',
     'digletts-cave': 'Cueva Diglett', 'fuchsia-city': 'Ciudad Fucsia', 'mt-moon': 'Monte Moon',
@@ -58,7 +96,7 @@ LOCATION_ES = {
     'pewter-city': 'Ciudad Plateada', 'saffron-city': 'Ciudad Azafrán', 'lavender-town': 'Pueblo Lavanda',
 }
 
-_ROUTE = re.compile(r'^(?:sinnoh|johto|kanto)-(?:sea-)?route-(\d+)$')
+_ROUTE = re.compile(r'^(?:sinnoh|johto|kanto|hoenn)-(?:sea-)?route-(\d+)$')
 
 
 def location_es(identifier):
@@ -81,7 +119,9 @@ SUB_EN_BY_IDENT = {
     'mt-moon-square': 'Mt. Moon Square', 'oreburgh-mining-museum': 'Mining Museum',
     'pewter-museum-of-science': 'Museum of Science', 'prize-corner': 'Prize Corner', 'silph-co': 'Silph Co.',
     'ss-anne-dock': 'S.S. Anne dock', 'eterna-condominiums': 'Eterna Condominiums', 'cavern': 'Cavern',
-    'entrance': 'Entrance', 'inside': 'Main cavern', 'area-1': 'Area 1', 'area-2': 'Area 2', 'area-3': 'Area 3',
+    'entrance': 'Entrance', 'inside': 'Main cavern', 'celadon-mansion': 'Celadon Mansion', 'summit': 'Summit',
+    'fighting-dojo': 'Fighting Dojo', 'silph-co-7f': 'Silph Co. 7F', 'b2f': 'B2F', 'b3f': 'B3F',
+    'high-tide': 'High tide', 'low-tide': 'Low tide', 'apex': 'Top', 'area-1': 'Area 1', 'area-2': 'Area 2', 'area-3': 'Area 3',
     'area-4': 'Area 4', 'area-5': 'Area 5', 'area-6': 'Area 6', 'area': '',
 }
 
@@ -115,10 +155,23 @@ SUB_ES = {
     'Mt. Moon Square': 'Plaza Monte Moon', 'Mining Museum': 'Museo de la Mina', 'Museum of Science': 'Museo de Ciencias',
     'Prize Corner': 'Tienda de premios', 'Silph Co.': 'Silph S.A.', 'S.S. Anne dock': 'Muelle del S.S. Anne',
     'Eterna Condominiums': 'Bloque de pisos', 'Cavern': 'Caverna', 'Main cavern': 'Caverna principal',
+    '1F, cave behind team rocket': '1F, cueva tras el Team Rocket', '1F/small room': '1F, sala pequeña',
+    'Area 1, east': 'Zona 1, este', 'Area 2, north': 'Zona 2, norte', 'Area 3, west': 'Zona 3, oeste',
+    'Cinnabar Island': 'Isla Canela', 'NE/acro bike area': 'NE, zona de la bici acrobática',
+    'NW/mach bike area': 'NO, zona de la bici de carreras', 'SE': 'SE', 'SW': 'SO', "Steven's house": 'Casa de Máximo',
+    'apex': 'cima', 'Top': 'Cima', 'back': 'fondo', 'back/small room': 'fondo, sala pequeña', 'cave': 'cueva',
+    'celadon mansion': 'Mansión Azulona', 'Celadon Mansion': 'Mansión Azulona', 'expansion north': 'ampliación norte',
+    'expansion south': 'ampliación sur', 'fighting dojo': 'Dojo Karate', 'Fighting Dojo': 'Dojo Karate',
+    'high tide': 'marea alta', 'High tide': 'Marea alta', 'low tide': 'marea baja', 'Low tide': 'Marea baja',
+    'item rooms': 'salas de objetos', 'middle': 'centro', 'silph co 7f': 'Silph S.A. 7F', 'Silph Co. 7F': 'Silph S.A. 7F',
+    'summit': 'cima', 'Summit': 'Cima', 'underwater': 'bajo el agua', 'waterfall': 'cascada',
     'interior A': 'interior A', 'interior B': 'interior B', 'interior C': 'interior C', 'interior D': 'interior D',
 }
 _DIR_ES = {'north': 'norte', 'south': 'sur', 'east': 'este', 'west': 'oeste'}
-_FLOOR = re.compile(r'^(B?\d+F)(?: ([A-E]|left|right))?$')
+_FLOOR = re.compile(r'^([Bb]?\d+[Ff])(?: ([A-E]|left|right))?$')
+_LETTER = re.compile(r'^[A-I]$')
+_ROOM = re.compile(r'^room (\d+)$')
+_ROAD_ONLY = re.compile(r'^Road (\d+)$')
 _TOWARDS = re.compile(r'^(north|south|east|west), towards (.+)$')
 _ROAD = re.compile(r'^1F Road (\d+)$')
 _AREA = re.compile(r'^Area (\d)$')
@@ -131,7 +184,15 @@ def sub_es(sub_en, en_to_es_location):
     m = _FLOOR.match(sub_en)
     if m:
         side = {'left': 'izquierda', 'right': 'derecha'}.get(m.group(2), m.group(2))
-        return m.group(1) + (f' {side}' if side else '')
+        return m.group(1).upper() + (f' {side}' if side else '')
+    if _LETTER.match(sub_en):
+        return sub_en
+    m = _ROOM.match(sub_en)
+    if m:
+        return f'sala {m.group(1)}'
+    m = _ROAD_ONLY.match(sub_en)
+    if m:
+        return f'Ruta {m.group(1)}'
     m = _TOWARDS.match(sub_en)
     if m and m.group(2) in en_to_es_location:
         return f'{_DIR_ES[m.group(1)]}, hacia {en_to_es_location[m.group(2)]}'
@@ -146,5 +207,8 @@ def sub_es(sub_en, en_to_es_location):
 
 def tidy_sub_en(sub):
     sub = re.sub(r'^1F Road (\d+)$', r'1F, Route \1', sub)
+    sub = re.sub(r'^Road (\d+)$', r'Route \1', sub)
+    sub = re.sub(r'^([bB]?\d+)f$', lambda m: m.group(1).upper() + 'F', sub)
+    sub = sub.replace('/', ', ').replace('silph co 7f', 'Silph Co. 7F').replace('team rocket', 'Team Rocket')
     sub = sub.replace('Poke Mart', 'Poké Mart').replace('Pokemon Center', 'Pokémon Center')
     return sub[:1].upper() + sub[1:]

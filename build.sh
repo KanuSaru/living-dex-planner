@@ -26,6 +26,6 @@ echo "== sprites";     python3 -m pipeline.build_sprites sprites-src generated
 echo "== availability"; node scripts/availability.mjs generated
 echo "== validate";    python3 -m pipeline.validate generated
 echo "== tests";       python3 -m unittest discover -s tests
-                       node --test tests/planner.test.mjs tests/text.test.mjs tests/progress.test.mjs tests/boxes.test.mjs
+                       node --test tests/planner.test.mjs tests/text.test.mjs tests/progress.test.mjs tests/boxes.test.mjs tests/multi.test.mjs
 echo "== site";        python3 -m pipeline.build_site src generated site
 echo "== single file"; python3 -m pipeline.build_single src generated dist/living-dex.html

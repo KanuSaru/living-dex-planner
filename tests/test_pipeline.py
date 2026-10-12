@@ -93,6 +93,22 @@ class GeneratedData(unittest.TestCase):
         hg = {f['key'] for f in load('heartgold')['forms']}
         self.assertIn('pichu-spiky-eared', hg)
 
+    def test_gen3_games(self):
+        self.assertEqual(load('emerald')['game']['regionalSize'], 202)
+        self.assertEqual(load('firered')['game']['regionalSize'], 151)
+        self.assertEqual(load('emerald')['forms'], [])
+        espeon = next(s for s in load('firered')['species'] if s['id'] == 196)
+        self.assertTrue(all(ev.get('ext') == 'trade' for ev in espeon['ev']), 'no clock in FireRed')
+        deoxys = next(s for s in load('emerald')['species'] if s['id'] == 386)
+        self.assertTrue(all('event' in e.get('ext', []) for e in deoxys['e']), 'Birth Island needs an event ticket')
+
+    def test_index_marks_main_games(self):
+        with open(os.path.join(GEN, 'data', 'index.json'), encoding='utf-8') as f:
+            index = json.load(f)
+        mains = sorted(g['id'] for g in index['games'] if g['main'])
+        self.assertEqual(mains, ['diamond', 'heartgold', 'pearl', 'platinum', 'soulsilver'])
+        self.assertEqual(len(index['games']), 10)
+
     def test_drifloon_friday_in_platinum(self):
         drifloon = next(s for s in load('platinum')['species'] if s['id'] == 425)
         self.assertIn({'k': 'weekday', 'v': 'friday'}, drifloon['e'][0]['req'])
