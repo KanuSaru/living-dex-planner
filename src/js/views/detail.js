@@ -1,12 +1,12 @@
 // Detail panel for one species: fastest route, family, forms, other games, every encounter.
 import { t } from '../i18n.js';
-import { boxBtn, encounterTable, esc, gameName, lockFor, lockText, pad3, pips, sourceCtx, spr, statusChip } from '../dom.js';
+import { boxBtn, encounterTable, esc, gameName, hopsText, lockFor, lockText, pad3, pips, sourceCtx, spr, statusChip } from '../dom.js';
 import { speciesForms } from './forms.js';
 import { positionFor } from './boxes.js';
 
 const TYPE_COLOR = { 1: '#a8a77a', 2: '#c22e28', 3: '#a98ff3', 4: '#a33ea1', 5: '#e2bf65', 6: '#b6a136', 7: '#a6b91a',
   8: '#735797', 9: '#b7b7ce', 10: '#ee8130', 11: '#6390f0', 12: '#7ac74c', 13: '#f7d02c', 14: '#f95587', 15: '#96d9d6',
-  16: '#6f35fc', 17: '#705746' };
+  16: '#6f35fc', 17: '#705746', 18: '#d685ad' };
 
 function family(ctx, s) {
   const { P, T } = ctx;
@@ -38,18 +38,23 @@ function family(ctx, s) {
 function otherGames(ctx, s) {
   if (!ctx.avail) return '';
   const row = ctx.avail[s.id] || {};
-  const games = ctx.index.games.filter((g) => g.id !== ctx.data.game.id);
+  // games that have this species at all, grouped by generation
+  const games = ctx.index.games.filter((g) => g.id !== ctx.data.game.id && !g.home && s.id <= (NAT[g.gen] || 0));
+  if (!games.length) return '';
   const owned = new Set(ctx.state.owned || []);
-  const chips = games.map((g) => {
+  const chip = (g) => {
     const v = row[g.id];
     const name = esc(g.name[ctx.lang] || g.name.en) + (owned.has(g.id) ? ` <span class="yours">${t('detail.yours')}</span>` : '');
     if (!v) return `<span class="gchip none">${name}</span>`;
     const [kind, ext] = v.split(':');
     const label = ext ? ctx.T.ext(ext) : kind === 'event' ? t('status.event') : t(`status.${kind}`);
     return `<span class="gchip ${ext ? 'ext' : 'ok'}">${name} · ${esc(label)}</span>`;
-  }).join('');
-  return `<div class="d-sec"><h3>${t('detail.otherGames')}</h3><div class="gchips">${chips}</div></div>`;
+  };
+  const gens = [...new Set(games.map((g) => g.gen))];
+  const rows = gens.map((gen) => `<div class="gchips-gen"><b>${esc(t('gen.short', { n: gen }))}</b>${games.filter((g) => g.gen === gen).map(chip).join('')}</div>`).join('');
+  return `<div class="d-sec"><h3>${t('detail.otherGames')}</h3><div class="gchips">${rows}</div></div>`;
 }
+const NAT = { 1: 151, 2: 251, 3: 386, 4: 493, 5: 649 };
 
 export function render(ctx) {
   const { P, T, data } = ctx;
@@ -57,7 +62,7 @@ export function render(ctx) {
   if (!s) return '';
   const m = ctx.M.best(s.id);
   const b = m && !m.via ? m.o : P.best(s.id);
-  const regional = s.rd != null ? `${esc(t('scope.regional', { region: t(`region.${data.game.region}`), n: '' }).trim().toUpperCase())} #${pad3(s.rd)} · ` : '';
+  const regional = s.rd != null && data.game.regionalSize < data.game.natMax ? `${esc(t('scope.regional', { region: t(`region.${data.game.region}`), n: '' }).trim().toUpperCase())} #${pad3(s.rd)} · ` : '';
   let h = `<div class="d-in"><div class="d-head">${spr(ctx, s.id)}<div class="d-title"><div class="no">${regional}${esc(t('scope.national', { n: '' }).trim().toUpperCase())} #${pad3(s.id)}</div><h2>${esc(T.species(s))}</h2><div class="types">${s.ty.map((ty) => `<span class="type" style="--tc:${TYPE_COLOR[ty] || '#999'}">${esc(T.type(ty))}</span>`).join('')}</div></div><button class="btn ghost" data-action="close">${t('detail.close')}</button></div>`;
   const pos = positionFor(ctx, s.id);
   h += `<div class="d-actions">${boxBtn(ctx, s.id, T.species(s), true)}${statusChip(ctx, s)}${pos ? `<span class="note boxpos">${esc(t('detail.position', pos))}</span>` : ''}</div>`;
@@ -65,8 +70,10 @@ export function render(ctx) {
   if (m && m.via) {
     const sc = sourceCtx(ctx, m.src);
     const name = gameName(ctx, m.where);
-    const steps = [...sc.T.steps(m.o), t(m.via === 'palpark' ? 'step.palpark' : 'step.trade', { main: T.game() })];
-    h += `<div class="best xfer"><span class="lbl">${esc(t('detail.from', { game: name, via: t(`via.${m.via}`, { main: T.game() }) }))} · ${esc(m.via === 'palpark' ? T.stageTag(ctx.M.natStage) : sc.T.stageTag(m.o.st))}</span><ol>${steps.map((x) => `<li>${x}</li>`).join('')}</ol></div>`;
+    const hops = m.via.map((hp) => esc(t(`step.${hp.k}`, { main: gameName(ctx, hp.to) })) + (hp.note ? ' ' + esc(t(`hop.note.${hp.note}`)) : ''));
+    const steps = [...sc.T.steps(m.o), ...hops];
+    const lock = lockFor(ctx, m);
+    h += `<div class="best xfer"><span class="lbl">${esc(t('detail.from', { game: name, via: hopsText(ctx, m.via) }))} · ${esc(m.st ? T.stageTag(m.st) : sc.T.stageTag(m.o.st))}</span><ol>${steps.map((x) => `<li>${x}</li>`).join('')}</ol>${lock ? `<div class="lockline">🔒 ${esc(lockText(ctx, lock))}</div>` : ''}</div>`;
     const se = sc.P.S.get(s.id);
     const rows = [...(se.e || [])].sort((x, y) => sc.P.effStage(x) - sc.P.effStage(y)).map((e) => ({ s: se, e }));
     if (rows.length) srcTable = `<div class="d-sec"><h3>${esc(t('detail.whereIn', { name: T.species(s), game: name }))}</h3>${encounterTable(sc, rows, { firstCol: 'area' })}</div>`;

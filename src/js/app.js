@@ -1,7 +1,7 @@
 // App controller: loads data, keeps state, renders views and handles events.
 import { getLang, setLang, t } from './i18n.js';
-import { createPlanner, periodAt } from './planner.js';
-import { createMulti } from './multi.js';
+import { periodAt } from './planner.js';
+import { setupGames } from './multi.js';
 import { createText } from './text.js';
 import { gameState, loadState, saveState } from './store.js';
 import { decodeProgress, peekProgress } from './progress-code.js';
@@ -56,23 +56,22 @@ function save() {
   saveState(state);
 }
 
+// tabs that have something to show for this game (HOME has no places, Gen 1 has no forms)
+function tabsFor(data) {
+  return TABS.filter((k) => !(k === 'areas' && !data.areas.length) && !(k === 'forms' && !data.forms.length));
+}
+
 function buildCtx(data) {
   const gs = gameState(state, data.game.id);
-  // other games you own: Gen 4 games trade with the main game, Gen 3 games reach it through Pal Park
-  const ownedIds = (state.owned || []).filter((id) => id !== data.game.id && dataCache.has(id) && metaOf(id))
+  const G = data.game;
+  if (!G.regionalSize || G.regionalSize >= G.natMax) gs.scope = 'national';
+  // other games you own, newest generation first; each reaches the main game along the transfer chain
+  const ownedIds = (state.owned || []).filter((id) => id !== G.id && dataCache.has(id) && metaOf(id) && !metaOf(id).home)
     .sort((a, b) => metaOf(b).gen - metaOf(a).gen || index.games.indexOf(metaOf(a)) - index.games.indexOf(metaOf(b)));
-  const gen4 = 1 + ownedIds.filter((id) => metaOf(id).gen === 4).length;
-  const tradeEvolutions = !!state.hw.trade && gen4 >= 2;
-  const gba = state.hw.gba ? new Set(ownedIds.filter((id) => metaOf(id).gen === 3)) : null;
-  const P = createPlanner(data, { starters: gs.starters, gba, tradeEvolutions });
+  const { P, sources, M } = setupGames(data, ownedIds.map((id) => dataCache.get(id)), state.hw,
+    (id) => gameState(state, id).starters);
+  for (const src of sources) src.T = createText(src.data);
   const T = createText(data);
-  const sources = ownedIds.map((id) => {
-    const d = dataCache.get(id);
-    const gen = metaOf(id).gen;
-    return { id, gen, data: d, T: createText(d),
-      P: createPlanner(d, { starters: gameState(state, id).starters, tradeEvolutions: gen === 4 && tradeEvolutions }) };
-  });
-  const M = createMulti({ id: data.game.id, gen: 4, P }, sources, { trade: !!state.hw.trade, palPark: !!state.hw.gba });
   const prev = ctx && ctx.data === data ? ctx : null;
   const c = {
     index, data, P, T, M, state, gs, avail, embedded: EMBEDDED, metaOf,
@@ -82,7 +81,8 @@ function buildCtx(data) {
     ui: prev ? prev.ui : { dexQuery: '', dexFilter: 'all', areaQuery: '', syncMsg: '', pasteDraft: '', syncOpen: false, boxGaps: false },
     now: new Date(),
     get lang() { return getLang(); },
-    get period() { return periodAt(this.now); },
+    get period() { return periodAt(this.now, G.clock); },
+    tabs: tabsFor(data),
     areaSpecies: P.areaSpecies(),
     inScope: (s) => gs.scope === 'national' || s.rd != null,
     dexNo: (s) => (gs.scope === 'regional' && s.rd != null ? s.rd : s.id),
@@ -99,7 +99,7 @@ async function switchGame(id, { keepScroll = false } = {}) {
   let meta = metaOf(id);
   if (!meta || !meta.main) meta = metaOf(index.default);
   state.game = meta.id;
-  for (const gid of [meta.id, ...(state.owned || [])]) {
+  for (const gid of [meta.id, ...(state.owned || []).filter((x) => metaOf(x) && !metaOf(x).home)]) {
     const m = metaOf(gid);
     if (!m || dataCache.has(gid)) continue;
     $('tabs-body').innerHTML = `<div class="empty">${esc(t('loading', { game: m.name[getLang()] || m.name.en }))}</div>`;
@@ -128,17 +128,20 @@ function headerHTML() {
   const list = ctx.scopeList();
   const boxed = list.filter((s) => ctx.caught.has(String(s.id))).length;
   const reach = list.filter((s) => { const b = ctx.M.best(s.id); return b && (b.via || !b.o.ext); }).length;
-  const owned = (state.owned || []).filter((id) => id !== data.game.id && metaOf(id)).length;
+  const owned = (state.owned || []).filter((id) => id !== data.game.id && metaOf(id) && !metaOf(id).home).length;
   const fc = Forms.formCounts(ctx);
   const pct = list.length ? (100 * boxed) / list.length : 0;
-  const region = t(`region.${data.game.region}`);
-  return `<div class="brand"><div class="brand-text"><h1>Living Dex <span>Planner</span></h1><p>${esc(t('app.lede', { game }))}</p></div>
-    <div class="prog" aria-live="polite"><div class="prog-row"><b>${boxed} / ${list.length}</b><small>${t('progress.boxed')} · ${esc(t(ctx.M.sources.length ? 'progress.possibleWith' : 'progress.possible', { n: reach, game }))}</small></div><div class="bar"><i style="width:${pct}%"></i></div><small class="forms-prog">${esc(t('progress.forms', { a: fc.a, b: fc.b }))}</small></div></div>
+  const G = data.game;
+  const region = t(`region.${G.region}`);
+  const scopes = G.regionalSize && G.regionalSize < G.natMax
+    ? `<div class="seg" role="group" aria-label="${t('scope.label')}"><button data-action="scope" data-scope="regional" aria-pressed="${gs.scope === 'regional'}">${esc(t('scope.regional', { region, n: G.regionalSize }))}</button><button data-action="scope" data-scope="national" aria-pressed="${gs.scope === 'national'}">${esc(t('scope.national', { n: G.natMax }))}</button></div>` : '';
+  return `<div class="brand"><div class="brand-text"><h1>Living Dex <span>Planner</span></h1><p>${esc(t(G.home ? 'app.lede.home' : 'app.lede', { game }))}</p></div>
+    <div class="prog" aria-live="polite"><div class="prog-row"><b>${boxed} / ${list.length}</b><small>${t('progress.boxed')} · ${esc(t(ctx.M.sources.length ? 'progress.possibleWith' : 'progress.possible', { n: reach, game }))}</small></div><div class="bar"><i style="width:${pct}%"></i></div>${fc.b ? `<small class="forms-prog">${esc(t('progress.forms', { a: fc.a, b: fc.b }))}</small>` : ''}</div></div>
     <div class="controls">
-      <div class="tabs" role="tablist">${TABS.map((k) => `<button role="tab" id="tab-${k}" data-action="tab" data-tab="${k}" aria-selected="${state.tab === k}">${t(`tab.${k}`)}</button>`).join('')}</div>
+      <div class="tabs" role="tablist">${ctx.tabs.map((k) => `<button role="tab" id="tab-${k}" data-action="tab" data-tab="${k}" aria-selected="${state.tab === k}">${t(`tab.${k}`)}</button>`).join('')}</div>
       <div class="opt">
         <button class="btn small mygames" data-action="menu-open" title="${esc(t('menu.title'))}">${esc(game)}${owned ? ` <span class="more">+${owned}</span>` : ''} · ${t('menu.button')}</button>
-        <div class="seg" role="group" aria-label="${t('scope.label')}"><button data-action="scope" data-scope="regional" aria-pressed="${gs.scope === 'regional'}">${esc(t('scope.regional', { region, n: data.game.regionalSize }))}</button><button data-action="scope" data-scope="national" aria-pressed="${gs.scope === 'national'}">${esc(t('scope.national', { n: 493 }))}</button></div>
+        ${scopes}
         <label class="chk"><input type="checkbox" id="hideCaught" data-action="hide" ${state.hide ? 'checked' : ''}> ${t('hide.boxed')}</label>
         <div class="seg" role="group" aria-label="${t('lang.label')}"><button data-action="lang" data-lang="en" aria-pressed="${getLang() === 'en'}" lang="en">EN</button><button data-action="lang" data-lang="es" aria-pressed="${getLang() === 'es'}" lang="es">ES</button></div>
         <button class="btn small" data-action="sync-open">${t('sync.button')}</button>
@@ -152,6 +155,7 @@ function renderHeader() {
   document.documentElement.lang = getLang();
 }
 function renderTab() {
+  if (!ctx.tabs.includes(state.tab)) state.tab = 'plan';
   $('tabs-body').innerHTML = VIEWS[state.tab].render(ctx);
 }
 function renderDetail() {
@@ -181,13 +185,13 @@ function renderMenu() {
 }
 function openMenu(first = false) {
   menuDraft = { main: state.game, owned: new Set((state.owned || []).filter((id) => id !== state.game)),
-    trade: !!state.hw.trade, gba: !!state.hw.gba, first };
+    trade: !!state.hw.trade, gba: !!state.hw.gba, bank: !!state.hw.bank, vc: !!state.hw.vc, first };
   renderMenu();
 }
 async function saveMenu() {
   const d = menuDraft;
   state.owned = [...d.owned].filter((id) => id !== d.main);
-  state.hw = { trade: d.trade, gba: d.gba };
+  state.hw = { trade: d.trade, gba: d.gba, bank: d.bank, vc: d.vc };
   state.setupDone = true;
   menuDraft = null;
   renderMenu();
@@ -265,7 +269,7 @@ document.addEventListener('click', async (ev) => {
     case 'box': ev.stopPropagation(); toggleBox(el.dataset.key); break;
     case 'open': ctx.current = +el.dataset.id; renderDetail(); if (state.tab === 'dex') markCurrent(); break;
     case 'close': ctx.current = null; renderDetail(); if (state.tab === 'dex') markCurrent(); break;
-    case 'tab': state.tab = TABS.includes(el.dataset.tab) ? el.dataset.tab : 'plan'; save(); renderHeader(); renderTab(); break;
+    case 'tab': state.tab = ctx.tabs.includes(el.dataset.tab) ? el.dataset.tab : 'plan'; save(); renderHeader(); renderTab(); break;
     case 'slot':
       if (state.boxTap === 'open') { ctx.current = +el.dataset.id; renderDetail(); } else toggleBox(el.dataset.key);
       break;
@@ -328,7 +332,7 @@ document.addEventListener('change', async (ev) => {
       const file = el.files && el.files[0];
       if (!file) break;
       const text = await file.text();
-      const m = text.match(/LD1\.[a-z]+\.[A-Za-z0-9_-]+/);
+      const m = text.match(/LD1\.[a-z0-9]+\.[A-Za-z0-9_-]+/);
       if (m) { $('sync-paste').value = m[0]; ctx.ui.pasteDraft = m[0]; setSyncMsg(''); } else setSyncMsg(t('sync.bad'));
       break;
     }

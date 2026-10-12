@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dataDir = join(root, 'generated', 'data');
 
-export const GAMES = ['ruby', 'sapphire', 'emerald', 'firered', 'leafgreen', 'diamond', 'pearl', 'platinum', 'heartgold', 'soulsilver'];
+export const GAMES = ['red', 'blue', 'yellow', 'gold', 'silver', 'crystal', 'ruby', 'sapphire', 'emerald', 'firered', 'leafgreen',
+  'diamond', 'pearl', 'platinum', 'heartgold', 'soulsilver', 'black', 'white', 'black2', 'white2', 'home'];
 export const GEN4 = ['diamond', 'pearl', 'platinum', 'heartgold', 'soulsilver'];
 const cache = new Map();
 

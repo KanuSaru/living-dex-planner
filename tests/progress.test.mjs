@@ -1,13 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeProgress, encodeProgress, peekProgress } from '../src/js/progress-code.js';
-import { GEN4, loadGame } from './helpers.mjs';
+import { GAMES, loadGame } from './helpers.mjs';
 
-test('progress codes round-trip species and forms in every Gen 4 game', () => {
-  for (const id of GEN4) {
+test('progress codes round-trip species and forms in every game', () => {
+  for (const id of GAMES) {
     const data = loadGame(id);
     const forms = data.forms.filter((f) => !f.def).map((f) => f.key);
-    const caught = new Set(['1', '25', '133', '201', '493', ...forms.slice(0, 3), forms.at(-1)]);
+    const ids = ['1', '25', '133', '201', '493', '649', '1025'].filter((x) => +x <= data.game.natMax);
+    const caught = new Set([...ids, ...forms.slice(0, 3), ...forms.slice(-1)]);
     const code = encodeProgress(data, caught);
     assert.match(code, new RegExp(`^LD1\\.${id}\\.[A-Za-z0-9_-]+$`));
     assert.deepEqual([...decodeProgress(data, code)].sort(), [...caught].sort(), id);
@@ -32,4 +33,13 @@ test('codes tolerate whitespace and reject other games or damage', () => {
   assert.equal(decodeProgress(pt, code.slice(0, -4)), null);
   assert.equal(decodeProgress(pt, 'hello'), null);
   assert.equal(peekProgress(''), null);
+});
+
+test('codes made before Gen 1–5 support still load in the Gen 4 games', () => {
+  // a Platinum code with Garchomp and the Unown B form, as the Gen 4-only version wrote it
+  const pt = loadGame('platinum');
+  const code = encodeProgress(pt, new Set(['445', 'unown-b']));
+  assert.equal(Math.ceil((493 + pt.forms.filter((f) => !f.def).length) / 8), Math.ceil(code.split('.')[2].length * 6 / 8));
+  assert.deepEqual([...decodeProgress(pt, code)].sort(), ['445', 'unown-b']);
+  assert.equal(peekProgress('LD1.black2.AAAA').game, 'black2');
 });

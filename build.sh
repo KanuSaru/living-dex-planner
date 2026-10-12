@@ -13,13 +13,22 @@ elif [ "${UPDATE:-0}" = 1 ]; then
 fi
 if [ ! -d sprites-src ]; then
   git clone --depth 1 --filter=blob:none --sparse https://github.com/PokeAPI/sprites.git sprites-src
-  git -C sprites-src sparse-checkout set --no-cone \
-    'sprites/pokemon/versions/generation-iv/diamond-pearl/[0-9]*.png' \
-    'sprites/pokemon/versions/generation-iv/platinum/[0-9]*.png' \
-    'sprites/pokemon/versions/generation-iv/heartgold-soulsilver/[0-9]*.png'
 elif [ "${UPDATE:-0}" = 1 ]; then
   git -C sprites-src pull --ff-only
 fi
+# set every time, so an older checkout picks up sprite folders added later
+git -C sprites-src sparse-checkout set --no-cone \
+  'sprites/pokemon/versions/generation-i/red-blue/transparent/[0-9]*.png' \
+  'sprites/pokemon/versions/generation-i/yellow/transparent/[0-9]*.png' \
+  'sprites/pokemon/versions/generation-ii/gold/transparent/[0-9]*.png' \
+  'sprites/pokemon/versions/generation-ii/crystal/transparent/[0-9]*.png' \
+  'sprites/pokemon/versions/generation-iii/ruby-sapphire/[0-9]*.png' \
+  'sprites/pokemon/versions/generation-iii/emerald/[0-9]*.png' \
+  'sprites/pokemon/versions/generation-iii/firered-leafgreen/[0-9]*.png' \
+  'sprites/pokemon/versions/generation-iv/diamond-pearl/[0-9]*.png' \
+  'sprites/pokemon/versions/generation-iv/platinum/[0-9]*.png' \
+  'sprites/pokemon/versions/generation-iv/heartgold-soulsilver/[0-9]*.png' \
+  'sprites/pokemon/versions/generation-v/black-white/[0-9]*.png'
 
 echo "== data";        python3 -m pipeline.build_data pokeapi-src/data/v2/csv generated
 echo "== sprites";     python3 -m pipeline.build_sprites sprites-src generated

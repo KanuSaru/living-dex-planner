@@ -1,7 +1,7 @@
 """Place-name localisation that PokéAPI lacks.
 
-PokéAPI has no Spanish location names, so they are listed here (Spanish names as used in the
-Spanish releases of the Gen 4 games, checked against WikiDex). Sub-area labels come from
+PokéAPI has no Spanish location names for these regions, so they are listed here (Spanish names as used
+in the Spanish releases of each game, checked against WikiDex and Bulbapedia). Sub-area labels come from
 PokéAPI's English area prose and are translated with SUB_ES and a few patterns.
 validate.py reports any name that is missing.
 """
@@ -94,9 +94,32 @@ LOCATION_ES = {
     'cerulean-cave': 'Cueva Celeste', 'vermilion-city': 'Ciudad Carmín', 'kanto-victory-road-1': 'Calle Victoria',
     'viridian-city': 'Ciudad Verde', 'viridian-forest': 'Bosque Verde', 'kanto-power-plant': 'Central de Energía',
     'pewter-city': 'Ciudad Plateada', 'saffron-city': 'Ciudad Azafrán', 'lavender-town': 'Pueblo Lavanda',
+    # Unova (Black/White and Black 2/White 2, Spain releases)
+    'nuvema-town': 'Pueblo Arcilla', 'accumula-town': 'Pueblo Terracota', 'striaton-city': 'Ciudad Gres',
+    'nacrene-city': 'Ciudad Esmalte', 'castelia-city': 'Ciudad Porcelana', 'nimbasa-city': 'Ciudad Mayólica',
+    'driftveil-city': 'Ciudad Fayenza', 'mistralton-city': 'Ciudad Loza', 'icirrus-city': 'Ciudad Teja',
+    'opelucid-city': 'Ciudad Caolín', 'lacunosa-town': 'Pueblo Ladrillo', 'undella-town': 'Pueblo Arenisca',
+    'anville-town': 'Pueblo Biscuit', 'aspertia-city': 'Ciudad Engobe', 'floccesy-town': 'Pueblo Ocre',
+    'virbank-city': 'Ciudad Hormigón', 'humilau-city': 'Ciudad Marga', 'lentimas-town': 'Pueblo Chamota',
+    'dreamyard': 'Solar de los Sueños', 'pinwheel-forest': 'Bosque Azulejo', 'desert-resort': 'Zona Desierto',
+    'relic-castle': 'Castillo Ancestral', 'cold-storage': 'Almacenes Frigoríficos',
+    'chargestone-cave': 'Cueva Electrorroca', 'twist-mountain': 'Monte Tuerca', 'dragonspiral-tower': 'Torre Duodraco',
+    'unova-victory-road': 'Calle Victoria', 'unova-victory-road-2': 'Calle Victoria', 'ns-castle': 'Palacio de N',
+    'wellspring-cave': 'Cueva Manantial', 'mistralton-cave': 'Cueva Loza', 'celestial-tower': 'Torre de los Cielos',
+    'moor-of-icirrus': 'Pantano Teja', 'challengers-cave': 'Gruta Superación', 'giant-chasm': 'Boquete Gigante',
+    'liberty-garden': 'Isla Libertad', 'p2-laboratory': 'Laboratorio P+P', 'driftveil-drawbridge': 'Puente de Fayenza',
+    'village-bridge': 'Puente Villa', 'marvelous-bridge': 'Puente Progreso', 'abundant-shrine': 'Santuario Abundancia',
+    'undella-bay': 'Bahía Arenisca', 'lostlorn-forest': 'Bosque Perdidos', 'skyarrow-bridge': 'Puente Saeta',
+    'tubeline-bridge': 'Puente Axial',
+    'trial-chamber': 'Calle Victoria (cámara del fondo)', 'guidance-chamber': 'Cueva Loza (cámara del fondo)',
+    'castelia-sewers': 'Cloacas Porcelana', 'floccesy-ranch': 'Rancho Ocre', 'virbank-complex': 'Polígono Hormigón',
+    'reversal-mountain': 'Montaña Reversia', 'strange-house': 'Villa Horroris', 'relic-passage': 'Pasadizo Ancestral',
+    'clay-tunnel': 'Túnel Yakón', 'seaside-cave': 'Gruta Marina', 'nature-sanctuary': 'Reserva Natural',
+    'underground-ruins': 'Ruinas Subterráneas', 'rocky-mountain-room': 'Ruinas Subterráneas (sala de Regirock)',
+    'glacier-room': 'Ruinas Subterráneas (sala de Regice)', 'iron-room': 'Ruinas Subterráneas (sala de Registeel)',
 }
 
-_ROUTE = re.compile(r'^(?:sinnoh|johto|kanto|hoenn)-(?:sea-)?route-(\d+)$')
+_ROUTE = re.compile(r'^(?:sinnoh|johto|kanto|hoenn|unova)-(?:sea-)?route-(\d+)$')
 
 
 def location_es(identifier):
@@ -110,6 +133,15 @@ def location_en(identifier, pokeapi_name):
     return LOCATION_EN_OVERRIDE.get(identifier, pokeapi_name)
 
 
+# English sub-area labels that replace PokéAPI's prose, keyed by area identifier (the prose names the place twice).
+SUB_EN_FORCE = {
+    'pokemon-center': 'Pokémon Center', 'cinnabar-lab': 'Cinnabar Lab', 'manias-house': "Mania's house",
+    'southwest-house': 'Southwest house', 'nacrene-museum': 'Nacrene Museum', 'game-freak-hq-1f': 'Game Freak HQ 1F',
+    'victory-road-gate': 'Victory Road gate', 'weather-institute': 'Weather Institute',
+    'lighthouse-basement': 'Lighthouse basement', 'rumination-field': 'Rumination Field', 'throne-room': 'Throne room',
+    'b1f-3f': 'B1F–3F', 'west-gate': 'West gate',
+}
+
 # English sub-area labels for areas whose PokéAPI prose has no "(...)" part, keyed by area identifier.
 SUB_EN_BY_IDENT = {
     'department-store-5f': 'Department Store 5F', 'desert': 'Desert', 'forest': 'Forest', 'marshland': 'Marshland',
@@ -122,7 +154,7 @@ SUB_EN_BY_IDENT = {
     'entrance': 'Entrance', 'inside': 'Main cavern', 'celadon-mansion': 'Celadon Mansion', 'summit': 'Summit',
     'fighting-dojo': 'Fighting Dojo', 'silph-co-7f': 'Silph Co. 7F', 'b2f': 'B2F', 'b3f': 'B3F',
     'high-tide': 'High tide', 'low-tide': 'Low tide', 'apex': 'Top', 'area-1': 'Area 1', 'area-2': 'Area 2', 'area-3': 'Area 3',
-    'area-4': 'Area 4', 'area-5': 'Area 5', 'area-6': 'Area 6', 'area': '',
+    'area-4': 'Area 4', 'area-5': 'Area 5', 'area-6': 'Area 6', 'area': '', '7f': '7F', 'b1f': 'B1F', 'b4f': 'B4F',
 }
 
 SUB_ES = {
@@ -166,7 +198,20 @@ SUB_ES = {
     'item rooms': 'salas de objetos', 'middle': 'centro', 'silph co 7f': 'Silph S.A. 7F', 'Silph Co. 7F': 'Silph S.A. 7F',
     'summit': 'cima', 'Summit': 'Cima', 'underwater': 'bajo el agua', 'waterfall': 'cascada',
     'interior A': 'interior A', 'interior B': 'interior B', 'interior C': 'interior C', 'interior D': 'interior D',
+    'Pokémon Center': 'Centro Pokémon', 'Cinnabar Lab': 'Laboratorio de Isla Canela', "Mania's house": 'Casa del Maníaco',
+    'Southwest house': 'Casa del suroeste', 'Nacrene Museum': 'Museo de Esmalte', 'Game Freak HQ 1F': 'Sede de Game Freak 1F',
+    'Victory Road gate': 'Entrada a la Calle Victoria', 'Weather Institute': 'Instituto Meteorológico',
+    'Lighthouse basement': 'Sótano del faro', 'Rumination Field': 'Claro Meditación', 'Throne room': 'Sala del trono',
+    'B1F–3F': 'B1F–3F', 'West gate': 'Puerta oeste', 'north gate': 'puerta norte', 'inner': 'interior', 'outer': 'exterior',
+    'forest': 'bosque', 'forest cave': 'cueva del bosque', 'Hidden Grotto': 'Claro oculto',
+    'Castelia Sewers entrance': 'entrada de las Cloacas Porcelana', 'PWT entrance': 'entrada del PWT',
+    'Relic Castle entrance': 'entrada del Castillo Ancestral', '4f Middle Room': '4F sala central', 'A': 'A', 'B': 'B', 'C': 'C', 'D': 'D',
 }
+_GROTTO = re.compile(r'^Hidden Grotto – (.+)$')
+GROTTO_ES = {'Dark Grass': 'hierba alta oscura', 'Pond': 'estanque', 'Mistralton Cave': 'junto a la Cueva Loza',
+             'Near Pokemon Breeder': 'junto a la Criadora Pokémon', 'Giant Chasm': 'junto al Boquete Gigante',
+             'Stairs': 'escaleras', 'Inner area': 'zona interior', 'Outer area': 'zona exterior',
+             'Near Youngster': 'junto al Joven', 'Shrine': 'santuario'}
 _DIR_ES = {'north': 'norte', 'south': 'sur', 'east': 'este', 'west': 'oeste'}
 _FLOOR = re.compile(r'^([Bb]?\d+[Ff])(?: ([A-E]|left|right))?$')
 _LETTER = re.compile(r'^[A-I]$')
@@ -181,6 +226,9 @@ def sub_es(sub_en, en_to_es_location):
     """Translate an English sub-area label. Returns None if no rule applies."""
     if sub_en in SUB_ES:
         return SUB_ES[sub_en]
+    m = _GROTTO.match(sub_en)
+    if m and m.group(1) in GROTTO_ES:
+        return f'Claro oculto – {GROTTO_ES[m.group(1)]}'
     m = _FLOOR.match(sub_en)
     if m:
         side = {'left': 'izquierda', 'right': 'derecha'}.get(m.group(2), m.group(2))
@@ -209,6 +257,7 @@ def tidy_sub_en(sub):
     sub = re.sub(r'^1F Road (\d+)$', r'1F, Route \1', sub)
     sub = re.sub(r'^Road (\d+)$', r'Route \1', sub)
     sub = re.sub(r'^([bB]?\d+)f$', lambda m: m.group(1).upper() + 'F', sub)
+    sub = re.sub(r'^(\d+)f Middle Room$', r'\1F middle room', sub)
     sub = sub.replace('/', ', ').replace('silph co 7f', 'Silph Co. 7F').replace('team rocket', 'Team Rocket')
-    sub = sub.replace('Poke Mart', 'Poké Mart').replace('Pokemon Center', 'Pokémon Center')
+    sub = sub.replace('Poke Mart', 'Poké Mart').replace('Pokemon Center', 'Pokémon Center').replace('Pokemon Breeder', 'Pokémon Breeder')
     return sub[:1].upper() + sub[1:]

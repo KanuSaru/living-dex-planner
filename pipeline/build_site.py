@@ -54,7 +54,7 @@ def draw_icon(size, path, maskable=False):
 MANIFEST = {
     'name': 'Living Dex Planner',
     'short_name': 'Living Dex',
-    'description': 'Living dex planner for Pokémon Diamond, Pearl, Platinum, HeartGold and SoulSilver.',
+    'description': 'Living dex planner for the Pokémon games from Red and Blue to Black 2 and White 2, and Pokémon HOME.',
     'start_url': './',
     'scope': './',
     'display': 'standalone',
@@ -98,8 +98,11 @@ def main(argv):
             digest.update(rel.encode())
             digest.update(_bytes(p))
     files.sort()
+    # precache the app itself; each game's data and sprite sheet are cached the first time you open that game
+    per_game = lambda f: f.startswith('sprites/') or (f.startswith('data/') and f not in ('data/index.json', 'data/availability.json'))  # noqa: E731
+    precache = ['./'] + [f for f in files if not per_game(f)]
     sw = _text(os.path.join(src, 'sw.js'))
-    sw = sw.replace('__VERSION__', digest.hexdigest()[:12]).replace('__PRECACHE__', json.dumps(['./'] + files, indent=1))
+    sw = sw.replace('__VERSION__', digest.hexdigest()[:12]).replace('__PRECACHE__', json.dumps(precache, indent=1))
     with open(os.path.join(out, 'sw.js'), 'w', encoding='utf-8') as f:
         f.write(sw)
     size = sum(os.path.getsize(os.path.join(out, f)) for f in files)

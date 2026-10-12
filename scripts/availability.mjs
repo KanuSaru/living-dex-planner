@@ -1,5 +1,5 @@
 // Writes generated/data/availability.json: for every species, how each game can get it.
-// Uses the same planner as the site, so the "In other Gen 4 games" chips always agree with each game's plan.
+// Uses the same planner as the site, so the "In other games" chips always agree with each game's plan.
 // Usage: node scripts/availability.mjs generated
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -9,6 +9,7 @@ const out = process.argv[2] || 'generated';
 const index = JSON.parse(readFileSync(join(out, 'data', 'index.json'), 'utf8'));
 const result = {};
 for (const g of index.games) {
+  if (g.home) continue; // HOME has no Pokémon of its own
   const data = JSON.parse(readFileSync(join(out, 'data', `${g.id}.json`), 'utf8'));
   const P = createPlanner(data);
   for (const s of data.species) {

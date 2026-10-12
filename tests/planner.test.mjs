@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createPlanner, periodAt, weekdayAt, condReady, lockOf } from '../src/js/planner.js';
+import { setupGames } from '../src/js/multi.js';
 import { GAMES, loadGame, areaKey } from './helpers.mjs';
 
 const at = (h, m = 0) => new Date(2026, 9, 11, h, m); // 11 Oct 2026 is a Sunday
@@ -162,7 +163,7 @@ test('every game builds a plan without throwing', () => {
     const P = createPlanner(data);
     const plan = P.planGroups(data.species, new Set());
     const planned = plan.stages.reduce((n, s) => n + s.areas.reduce((m, a) => m + a.groups.reduce((k, g) => k + g.targets.length, 0), 0), 0);
-    assert.equal(planned + plan.ext.length + plan.none.length, 493, id);
+    assert.equal(planned + plan.ext.length + plan.none.length, data.game.natMax, id);
   }
 });
 
@@ -223,4 +224,86 @@ test('Nidoran and Volbeat/Illumise can be bred from their partner species', () =
   }
   const vol = P.options(313).find((o) => o.k === 'breed');
   assert.ok([313, 314].includes(vol.from));
+});
+
+// ------------------------------------------------------------------ every generation
+
+test('each game uses its own clock: Gen 2 nights start at 18:00, Gen 5 has seasons, Gen 1 and 3 have none', () => {
+  const gold = loadGame('gold').game.clock, black = loadGame('black').game.clock;
+  assert.equal(periodAt(at(17, 59), gold), 'd');
+  assert.equal(periodAt(at(18, 0), gold), 'n');
+  assert.equal(periodAt(at(19, 0)), 'd'); // Gen 4 default
+  assert.equal(periodAt(new Date(2026, 0, 5), black), 'sp'); // January
+  assert.equal(periodAt(new Date(2026, 5, 5), black), 'su'); // June
+  assert.equal(periodAt(new Date(2026, 9, 11), black), 'su'); // October
+  assert.equal(periodAt(new Date(2026, 11, 5), black), 'wi'); // December
+  assert.equal(periodAt(at(12), loadGame('red').game.clock), 'a');
+  assert.deepEqual(loadGame('black').game.periods, ['sp', 'su', 'au', 'wi']);
+  assert.deepEqual(loadGame('emerald').game.periods, ['a']);
+});
+
+test('Gen 1 has no breeding: a single gift copy covers one member of its family', () => {
+  const P = createPlanner(loadGame('red'), { starters: { 0: 1 } });
+  assert.equal(P.canBreed, false);
+  assert.equal(P.best(1).ext, null); // Bulbasaur is your starter
+  assert.equal(P.best(2).ext, 'one'); // Ivysaur needs a second Bulbasaur
+  assert.equal(P.best(133).ext, null); // the Celadon Eevee
+  for (const id of [134, 135, 136]) assert.equal(P.best(id).ext, 'one', String(id));
+  assert.equal(P.best(26).ext, null); // Raichu: wild Pikachu in Red
+  assert.equal(createPlanner(loadGame('yellow')).best(26).ext, 'trade'); // Yellow's Pikachu won't evolve
+});
+
+test('games with eggs still breed extra copies of one-time gifts', () => {
+  const P = createPlanner(loadGame('platinum'));
+  assert.equal(P.canBreed, true);
+  for (const id of [133, 134, 135, 136, 196, 197, 470, 471]) assert.notEqual(P.best(id).ext, 'one', String(id));
+});
+
+test('Gen 2 swarms count during the story; Crystal needs the Virtual Console for Celebi', () => {
+  const P = createPlanner(loadGame('crystal'));
+  assert.equal(P.best(251).ext, 'vc');
+  assert.equal(createPlanner(loadGame('crystal'), { vc: true }).best(251).ext, null);
+  const swarm = loadGame('gold').species.find((s) => s.id === 206).e.flatMap((e) => e.sp || []).find((sp) => sp.c.some((c) => c.k === 'swarm'));
+  assert.equal(swarm.st, 0);
+});
+
+test('Gen 5 seasons: encounters and catch-right-now follow the season', () => {
+  const data = loadGame('black');
+  const seasonal = data.species.flatMap((s) => (s.e || []).filter((e) => !e.g && new Set(Object.values(e.t)).size > 1).map((e) => ({ s, e })));
+  assert.ok(seasonal.length > 0);
+  const P = createPlanner(data);
+  const { s, e } = seasonal.find(({ e }) => e.t.wi === 0 && e.t.sp > 0 && e.m === 'walk') || seasonal[0];
+  const now = (d) => P.catchNow({ date: d, wanted: (x) => x.id === s.id }).some((g) => g.area.id === e.a);
+  if (e.t.wi === 0 && e.t.sp > 0) {
+    assert.equal(now(new Date(2026, 0, 5, 12)), true);
+    assert.equal(now(new Date(2026, 3, 5, 12)), false);
+  }
+});
+
+test('Black 2 gets Registeel; Regice needs the other version\'s key', () => {
+  const P = createPlanner(loadGame('black2'));
+  assert.equal(P.best(379).ext, null);
+  assert.equal(P.best(378).ext, 'other');
+  const W = createPlanner(loadGame('white2'));
+  assert.equal(W.best(378).ext, null);
+  assert.equal(W.best(379).ext, 'other');
+});
+
+test('Karrablast and Shelmet evolve by trading for each other', () => {
+  const data = loadGame('black');
+  const S = new Map(data.species.map((s) => [s.id, s]));
+  assert.equal(S.get(589).ev[0].ts, 616);
+  assert.equal(S.get(617).ev[0].ts, 588);
+});
+
+test('Fairy is a Gen 6 type: Clefairy is Normal before HOME', () => {
+  for (const id of ['red', 'platinum', 'black']) assert.deepEqual(loadGame(id).species.find((s) => s.id === 35).ty, [1], id);
+  assert.deepEqual(loadGame('home').species.find((s) => s.id === 35).ty, [18]);
+});
+
+test('setupGames gives trade evolutions to games with a partner of the same generation (Gen 1 and 2 pair up)', () => {
+  const alone = setupGames(loadGame('red'), []);
+  assert.equal(alone.P.best(65).ext, 'trade');
+  const withGold = setupGames(loadGame('red'), [loadGame('gold')]);
+  assert.equal(withGold.P.best(65).ext, null);
 });

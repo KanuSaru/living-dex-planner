@@ -1,7 +1,8 @@
-"""Pack sprites into one WebP sheet per sprite set (Diamond/Pearl, Platinum, HeartGold/SoulSilver).
+"""Pack sprites into one WebP sheet per sprite set (one or two per generation, and one for Pokémon HOME).
 
-Layout: 25 columns of 80x80 cells. Species 1..493 sit at index id-1; alternate forms follow,
-in the order listed in generated/sprite-manifest.json.
+Layout: 25 columns of square cells. Species 1..N sit at index id-1 (N = the last species the set covers);
+alternate forms follow, in the order listed in generated/sprite-manifest.json. Each set keeps its native
+pixel size; every sprite is cropped to the set's shared bounding box so no space is wasted.
 
 Usage: python3 -m pipeline.build_sprites <PokeAPI/sprites checkout> generated
 """
@@ -24,34 +25,40 @@ def _write_json(path, obj):
         json.dump(obj, f, indent=1)
 
 
-
-def build_sheet(src_dir, forms, out_path):
-    total = C.NATIONAL_MAX + len(forms)
-    rows = (total + C.SPRITE_COLS - 1) // C.SPRITE_COLS
-    cell = C.SPRITE_CELL
-    sheet = Image.new('RGBA', (C.SPRITE_COLS * cell, rows * cell), (0, 0, 0, 0))
-    missing = []
-
-    def paste(index, path):
-        im = Image.open(path).convert('RGBA')
-        if im.size != (cell, cell):
-            im = im.resize((cell, cell), Image.NEAREST)
-        sheet.paste(im, ((index % C.SPRITE_COLS) * cell, (index // C.SPRITE_COLS) * cell))
-
-    for sid in range(1, C.NATIONAL_MAX + 1):
-        path = os.path.join(src_dir, f'{sid}.png')
-        if os.path.exists(path):
-            paste(sid - 1, path)
-        else:
-            missing.append(f'{sid}.png')
+def build_sheet(src_dir, last, forms, out_path):
+    files = {sid - 1: os.path.join(src_dir, f'{sid}.png') for sid in range(1, last + 1)}
+    missing = [f'{i + 1}.png' for i, p in files.items() if not os.path.exists(p)]
+    files = {i: p for i, p in files.items() if os.path.exists(p)}
     for key, info in forms.items():
         path = next((os.path.join(src_dir, f) for f in info['files'] if os.path.exists(os.path.join(src_dir, f))), None)
         if path:
-            paste(info['index'], path)
+            files[info['index']] = path
         else:
             missing.append(f'{key} ({" / ".join(info["files"])})')
+    images = {i: Image.open(p).convert('RGBA') for i, p in files.items()}
+    # a square crop around everything any sprite in the set draws, centred on the canvas
+    size = max(im.size[0] for im in images.values())
+    lo, hi = size, 0
+    for im in images.values():
+        box = im.getbbox()
+        if box:
+            off = (size - im.size[0]) // 2
+            lo = min(lo, box[0] + off, box[1] + off)
+            hi = max(hi, box[2] + off, box[3] + off)
+    half = max(size / 2 - lo, hi - size / 2)
+    cell = int(2 * half + 0.999) + (int(2 * half + 0.999) % 2)
+    start = (size - cell) // 2
+    total = max([last] + [info['index'] + 1 for info in forms.values()])
+    rows = (total + C.SPRITE_COLS - 1) // C.SPRITE_COLS
+    sheet = Image.new('RGBA', (C.SPRITE_COLS * cell, rows * cell), (0, 0, 0, 0))
+    for i, im in images.items():
+        off = (size - im.size[0]) // 2
+        canvas = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+        canvas.paste(im, (off, off))
+        tile = canvas.crop((start, start, start + cell, start + cell))
+        sheet.paste(tile, ((i % C.SPRITE_COLS) * cell, (i // C.SPRITE_COLS) * cell))
     sheet.save(out_path, lossless=True, quality=100, method=6)
-    return missing
+    return missing, cell
 
 
 def main(argv):
@@ -61,12 +68,12 @@ def main(argv):
     manifest = _json(os.path.join(out_dir, 'sprite-manifest.json'))
     os.makedirs(os.path.join(out_dir, 'sprites'), exist_ok=True)
     report = {}
-    for sset, folder in C.SPRITE_SETS.items():
-        src = os.path.join(sprites_repo, 'sprites', 'pokemon', 'versions', 'generation-iv', folder)
+    for sset, (folder, last) in C.SPRITE_SETS.items():
+        src = os.path.join(sprites_repo, 'sprites', 'pokemon', 'versions', folder)
         out = os.path.join(out_dir, 'sprites', f'{sset}.webp')
-        missing = build_sheet(src, manifest.get(sset, {}), out)
+        missing, cell = build_sheet(src, last, manifest.get(sset, {}), out)
         report[sset] = missing
-        print(f'{sset}: {os.path.getsize(out) // 1024} KB, {len(missing)} missing')
+        print(f'{sset}: {cell}px cells, {os.path.getsize(out) // 1024} KB, {len(missing)} missing')
     _write_json(os.path.join(out_dir, 'sprite-problems.json'), report)
 
 

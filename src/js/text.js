@@ -49,6 +49,8 @@ export function createText(data) {
         case 'fossil': return t('cond.fossil', { item: api.item(c.i) });
         case 'item': return t('cond.item', { item: api.item(c.i) });
         case 'time': return t(`cond.time.${c.v}`);
+        case 'season': return t('cond.season', { season: t(`period.${c.v}`) });
+        case 'key': return t(`cond.key.${c.v}`);
         case 'periods': return t('periods.only', { list: c.v.map((p) => t(`period.${p}`)).join(t('periods.and')) });
         default: return t(`cond.${c.k}`);
       }
@@ -57,7 +59,7 @@ export function createText(data) {
 
     evo(ev) {
       let s;
-      if (ev.t === 'trade') s = t('evo.trade');
+      if (ev.t === 'trade') s = ev.ts ? t('evo.tradeFor', { name: api.species(ev.ts) }) : t('evo.trade');
       else if (ev.t === 'item') s = t('evo.use', { item: api.item(ev.it) });
       else if (ev.t === 'shed') return t('evo.shed');
       else s = ev.lv ? t('evo.level', { lv: ev.lv }) : t('evo.levelUp');
@@ -93,6 +95,10 @@ export function createText(data) {
       switch (h.k) {
         case 'unown': return t(`form.unown.${h.v}`);
         case 'alph': return t(`form.alph.${h.v}`);
+        case 'alph2': return t(`form.alph2.${h.v}`);
+        case 'season': return t('form.season', { season: t(`season.${h.v}`) });
+        case 'dna-splicers': return t('form.dna-splicers', { name: api.species(h.v === 'black' ? 644 : 643) });
+        case 'drive': return t('form.drive', { item: api.item(h.i) });
         case 'cloak': return t(`form.cloak.${h.v}`);
         case 'evo-cloak': return t('form.evo-cloak', { cloak: t(`cloak.${h.v}`) });
         case 'sea': return t(`form.sea.${h.v}`);

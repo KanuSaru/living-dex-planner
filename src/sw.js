@@ -1,5 +1,5 @@
-// Service worker: caches the whole site so the planner works offline once it has loaded.
-// build_site.py fills in VERSION and PRECACHE.
+// Service worker: caches the app on install, and each game's data and sprites the first time you open that game,
+// so the planner works offline for the games you use. build_site.py fills in VERSION and PRECACHE.
 const VERSION = '__VERSION__';
 const PRECACHE = __PRECACHE__;
 const CACHE = `living-dex-${VERSION}`;

@@ -56,11 +56,16 @@ export function gameName(ctx, id) {
   return m ? m.name[ctx.lang] || m.name.en : id;
 }
 
+// "Pal Park → Platinum · Poké Transfer → Black" for a chain of moves between your games
+export function hopsText(ctx, hops) {
+  return (hops || []).map((h) => t(`via.${h.k}`, { main: gameName(ctx, h.to) })).join(' · ');
+}
+
 export function statusChip(ctx, s) {
   const id = s.id;
   if (ctx.caught.has(String(id))) return `<span class="st caught">${t('status.boxed')}</span>`;
   const m = ctx.M ? ctx.M.best(id) : null;
-  if (m && m.via) return `<span class="st xfer">${esc(t('status.from', { game: gameName(ctx, m.where) }))}</span>`;
+  if (m && m.via) return `<span class="st xfer" title="${esc(hopsText(ctx, m.via))}">${esc(t('status.from', { game: gameName(ctx, m.where) }))}</span>`;
   const b = m ? m.o : ctx.P.best(id);
   if (!b) return `<span class="st none">${t('status.none')}</span>`;
   if (b.ext) return `<span class="st ext">${esc(ctx.T.ext(b.ext))}</span>`;
@@ -81,8 +86,15 @@ export function boxBtn(ctx, key, label, big = false) {
 export function chanceCells(ctx, e) {
   if (e.g) return `<span class="tod"><span>${t('rate.fixed')}</span></span>`;
   const now = ctx.period;
-  const c = (p) => `<span class="${e.t[p] ? '' : 'z'} ${p === now ? 'now' : ''}" title="${esc(ctx.T.period(p))}">${e.t[p]}%</span>`;
-  return `<span class="tod">${c('m')}${c('d')}${c('n')}</span>`;
+  const periods = ctx.P.periods || ['m', 'd', 'n'];
+  const c = (p) => `<span class="${e.t[p] ? '' : 'z'} ${p === now && periods.length > 1 ? 'now' : ''}" title="${esc(ctx.T.period(p))}">${e.t[p] || 0}%</span>`;
+  return `<span class="tod n${periods.length}">${periods.map(c).join('')}</span>`;
+}
+
+// table header for the rate columns: morning/day/night, the four seasons, or a single rate
+export function ratesHeader(ctx) {
+  const kind = ctx.data.game.clock ? ctx.data.game.clock.kind : null;
+  return t(kind === 'season' ? 'th.rates.season' : kind === 'tod' ? 'th.rates' : 'th.rates.one');
 }
 
 export function condCells(ctx, e) {
@@ -97,7 +109,7 @@ export const lvText = (e) => (e.m === 'npc-trade' ? '—' : e.lv[0] === e.lv[1] 
 
 export function encounterTable(ctx, rows, { firstCol = 'pokemon' } = {}) {
   const P = ctx.P, T = ctx.T;
-  let h = `<div class="tablewrap"><table><thead><tr><th>${firstCol === 'pokemon' ? t('th.pokemon') : t('th.area')}</th><th>${t('th.how')}</th><th>${t('th.lv')}</th><th>${t('th.rates')}</th><th>${firstCol === 'pokemon' ? t('th.cond') : t('th.cond.short')}</th></tr></thead><tbody>`;
+  let h = `<div class="tablewrap"><table><thead><tr><th>${firstCol === 'pokemon' ? t('th.pokemon') : t('th.area')}</th><th>${t('th.how')}</th><th>${t('th.lv')}</th><th>${esc(ratesHeader(ctx))}</th><th>${firstCol === 'pokemon' ? t('th.cond') : t('th.cond.short')}</th></tr></thead><tbody>`;
   for (const { s, e } of rows) {
     const a = P.A.get(e.a);
     const est = P.effStage(e);

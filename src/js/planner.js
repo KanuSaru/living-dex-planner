@@ -6,14 +6,20 @@
 //   st     – the overall stage, max(story, the stage at which you normally have each gate); used for ordering
 
 export const PERIODS = ['m', 'd', 'n'];
+export const SEASONS = ['sp', 'su', 'au', 'wi'];
 export const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 export const CONTEST_DAYS = ['tuesday', 'thursday', 'saturday'];
+const GEN4_CLOCK = { kind: 'tod', hours: [4, 10, 20] };
 
-// Gen 4 clock: morning 4:00–9:59, day 10:00–19:59, night 20:00–3:59
-export function periodAt(date) {
+// The game's clock at this moment: 'm' | 'd' | 'n' (Gen 2: night from 18:00, Gen 4: from 20:00),
+// a season for Gen 5 ('sp' January, May, September; 'su' the month after, and so on), or 'a' for games without one.
+export function periodAt(date, clock = GEN4_CLOCK) {
+  if (!clock) return 'a';
+  if (clock.kind === 'season') return SEASONS[date.getMonth() % 4];
+  const [morning, day, night] = clock.hours;
   const h = date.getHours();
-  if (h >= 4 && h < 10) return 'm';
-  if (h >= 10 && h < 20) return 'd';
+  if (h >= morning && h < day) return 'm';
+  if (h >= day && h < night) return 'd';
   return 'n';
 }
 export function weekdayAt(date) {
@@ -21,12 +27,12 @@ export function weekdayAt(date) {
 }
 
 // Lower is easier. Anything external sorts after everything you can do in your own game.
-const EXT_RANK = { gba: 1, trade: 2, starter: 2, other: 3, event: 4 };
+const EXT_RANK = { gba: 1, vc: 1, trade: 2, starter: 2, one: 2, other: 3, event: 4 };
 const extRank = (x) => (x ? EXT_RANK[x] || 3 : 0);
 
 // Conditions the player can satisfy on the spot (vs. luck-of-the-day ones like swarms).
 const INSTANT = new Set(['radar', 'radio', 'headbutt', 'give', 'coins', 'fossil', 'story', 'other', 'item', 'natdex',
-  'weekday', 'contest', 'time', 'tv', 'starter-was']);
+  'weekday', 'contest', 'time', 'tv', 'starter-was', 'season', 'key']);
 
 // Breeding across gender-split species: an egg can hatch as either one.
 const BREED_PARTNERS = { 29: [32], 32: [29], 313: [314], 314: [313] };
@@ -35,7 +41,7 @@ export function condReady(c, { period, weekday }) {
   if (!INSTANT.has(c.k)) return false;
   if (c.k === 'weekday') return c.v === weekday;
   if (c.k === 'contest') return CONTEST_DAYS.includes(weekday);
-  if (c.k === 'time') return c.v === period;
+  if (c.k === 'time' || c.k === 'season') return c.v === period;
   return true;
 }
 
@@ -51,9 +57,12 @@ export function lockOf(x, progress, has) {
 const uniq = (a) => [...new Set(a)];
 
 // options: starters {group: speciesId}; gba: Set of owned GBA games (unlocks dual-slot encounters);
-// tradeEvolutions: true when you can trade with a second DS game you own
-export function createPlanner(data, { starters = {}, gba = null, tradeEvolutions = false } = {}) {
+// tradeEvolutions: true when you can trade with another game of the same generation you own;
+// vc: your Gen 1/2 games are the 3DS Virtual Console releases (Crystal's GS Ball Celebi)
+export function createPlanner(data, { starters = {}, gba = null, tradeEvolutions = false, vc = false } = {}) {
   const G = data.game;
+  const periods = G.periods || PERIODS;
+  const canBreed = G.dayCareStage !== null;
   const S = new Map(data.species.map((s) => [s.id, s]));
   const A = new Map(data.areas.map((a) => [a.id, a]));
   const areaOrder = new Map(data.areas.map((a, i) => [a.id, i]));
@@ -102,7 +111,7 @@ export function createPlanner(data, { starters = {}, gba = null, tradeEvolutions
     for (const e of s.e || []) {
       const a = A.get(e.a);
       if (e.g) {
-        let ext = (e.ext || [])[0] || null;
+        let ext = (e.ext || []).find((x) => !(x === 'vc' && vc)) || null;
         const cond = e.req || [];
         let starterNote = null;
         if (e.sg != null && starters[e.sg] !== s.id) {
@@ -112,18 +121,18 @@ export function createPlanner(data, { starters = {}, gba = null, tradeEvolutions
         out.push(withStage({ k: 'catch', s: s.id, e, a, story: Math.max(a.st, e.cst || 0), gates: gatesOf(e), p: 100,
           cond, starterNote, special: cond.length > 0 || !!starterNote, ext, lv: e.lv[0], lvMax: e.lv[1] }));
       } else {
-        const mx = Math.max(e.t.m, e.t.d, e.t.n);
+        const mx = Math.max(...periods.map((p) => e.t[p] || 0));
         if (mx > 0) {
           const cond = [];
-          if (PERIODS.some((p) => e.t[p] === 0)) cond.push({ k: 'periods', v: PERIODS.filter((p) => e.t[p] > 0) });
-          out.push(withStage({ k: 'catch', s: s.id, e, a, story: a.st, gates: gatesOf(e), p: mx, cond, special: false,
+          if (periods.some((p) => !e.t[p])) cond.push({ k: 'periods', v: periods.filter((p) => e.t[p] > 0) });
+          out.push(withStage({ k: 'catch', s: s.id, e, a, story: Math.max(a.st, e.cst || 0), gates: gatesOf(e), p: mx, cond, special: false,
             ext: null, lv: e.lv[0], lvMax: e.lv[1] }));
         }
         for (const sp of e.sp || []) {
           let ext = sp.ext || null;
           const slot = sp.c.filter((c) => c.k === 'slot2');
           if (ext === 'gba' && gba && slot.length && slot.every((c) => gba.has(c.v))) ext = null;
-          out.push(withStage({ k: 'catch', s: s.id, e, a, story: Math.max(a.st, sp.st), gates: gatesOf(e, sp), p: sp.p,
+          out.push(withStage({ k: 'catch', s: s.id, e, a, story: Math.max(a.st, sp.st, e.cst || 0), gates: gatesOf(e, sp), p: sp.p,
             cond: sp.c, special: true, ext, lv: e.lv[0], lvMax: e.lv[1] }));
         }
       }
@@ -171,7 +180,7 @@ export function createPlanner(data, { starters = {}, gba = null, tradeEvolutions
 
   // Breeding gives the lowest stage of a family (or the post-baby stage when the baby needs an incense).
   function breedOption(s) {
-    if (s.leg || s.myth && s.id !== 489) return null;
+    if (!canBreed || s.leg || s.myth && s.id !== 489) return null;
     let members, either = false;
     if (s.id === 489) members = [S.get(490)];
     else {
@@ -228,6 +237,26 @@ export function createPlanner(data, { starters = {}, gba = null, tradeEvolutions
 
   const bestMap = new Map();
   for (const s of data.species) bestMap.set(s.id, pick(options(s.id)));
+
+  // A one-time gift or static Pokémon gives one copy. When its family can't be bred (Gen 1 has no eggs, legendaries
+  // never breed), only one target can use that copy; the others need another way, or another game ('one').
+  const familyBreeds = (s) => canBreed && !s.leg && !s.myth && !s.noegg && (s.gr !== -1 || S.has(132));
+  const byOneRoot = new Map();
+  for (const s of data.species) {
+    const b = bestMap.get(s.id);
+    if (!b || b.ext || !b.root || !b.root.e || !b.root.e.one) continue;
+    if (!byOneRoot.has(b.root)) byOneRoot.set(b.root, []);
+    byOneRoot.get(b.root).push(s.id);
+  }
+  for (const [root, ids] of byOneRoot) {
+    if (ids.length < 2 || familyBreeds(S.get(root.s))) continue;
+    const users = ids.filter((id) => !(bestMap.get(id).k === 'evolve' && bestMap.get(id).path.at(-1).ev.t === 'shed'));
+    users.sort((x, y) => bestMap.get(x).path.length - bestMap.get(y).path.length || x - y);
+    for (const id of users.slice(1)) {
+      const alt = pick(options(id).filter((o) => o.root !== root && !o.ext));
+      bestMap.set(id, alt || { ...bestMap.get(id), ext: 'one' });
+    }
+  }
   const best = (id) => bestMap.get(id) || null;
 
   function status(id) {
@@ -306,7 +335,7 @@ export function createPlanner(data, { starters = {}, gba = null, tradeEvolutions
   // Encounters you can use at this moment: reachable with your progress, right time and weekday, no luck needed.
   // isOpen(story, gates) decides reachability; leave it out to ignore progress.
   function catchNow({ date, wanted, isOpen = () => true }) {
-    const period = periodAt(date), weekday = weekdayAt(date);
+    const period = periodAt(date, G.clock === undefined ? GEN4_CLOCK : G.clock), weekday = weekdayAt(date);
     const ctx = { period, weekday };
     const byArea = new Map();
     for (const s of data.species) {
@@ -315,15 +344,15 @@ export function createPlanner(data, { starters = {}, gba = null, tradeEvolutions
         const a = A.get(e.a);
         let rate = 0, cond = [];
         if (e.g) {
-          if (e.ext && e.ext.length) continue;
+          if ((e.ext || []).some((x) => !(x === 'vc' && vc))) continue;
           if (e.sg != null && starters[e.sg] !== s.id) continue;
           if (!(e.req || []).every((c) => condReady(c, ctx))) continue;
           if (!isOpen(Math.max(a.st, e.cst || 0), gatesOf(e))) continue;
           rate = 100; cond = e.req || [];
         } else {
-          if (isOpen(a.st, gatesOf(e))) rate = e.t[period];
+          if (isOpen(Math.max(a.st, e.cst || 0), gatesOf(e))) rate = e.t[period] || 0;
           for (const sp of e.sp || []) {
-            if (sp.ext || !isOpen(Math.max(a.st, sp.st), gatesOf(e, sp))) continue;
+            if (sp.ext || !isOpen(Math.max(a.st, sp.st, e.cst || 0), gatesOf(e, sp))) continue;
             if (sp.c.every((c) => condReady(c, ctx)) && sp.p > rate) { rate = sp.p; cond = sp.c; }
           }
         }
@@ -369,5 +398,5 @@ export function createPlanner(data, { starters = {}, gba = null, tradeEvolutions
 
   return { data, game: G, S, A, areaOrder, families, children, formsBySpecies, best, options, status, effStage,
     gatesOf, gateStage, levelStage, planGroups, catchNow, formStatus, areaSpecies, descendants, freeCopy, notesFor,
-    randomSplit };
+    randomSplit, periods, canBreed };
 }

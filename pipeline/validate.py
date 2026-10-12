@@ -18,20 +18,33 @@ def _json(path):
 KNOWN_METHODS = {'walk', 'surf', 'old-rod', 'good-rod', 'super-rod', 'rock-smash', 'headbutt', 'honey-tree',
                  'gift', 'gift-egg', 'static', 'roaming-grass', 'roaming-water', 'npc-trade', 'pokemon-ranger',
                  'feebas-tile-fishing', 'pokeflute', 'squirt-bottle', 'seaweed', 'devon-scope', 'wailmer-pail',
-                 'colosseum-bonus-disc-jpn', 'colosseum-bonus-disc-us', 'pokemon-channel-pal'}
+                 'colosseum-bonus-disc-jpn', 'colosseum-bonus-disc-us', 'pokemon-channel-pal',
+                 'headbutt-low', 'headbutt-normal', 'headbutt-high', 'dark-grass', 'grass-spots', 'cave-spots',
+                 'bridge-spots', 'surf-spots', 'super-rod-spots', 'hidden-grotto'}
 KNOWN_COND = {'swarm', 'radar', 'slot2', 'radio', 'natdex', 'story', 'other', 'weekday', 'honey', 'marsh', 'backlot',
-              'contest', 'coins', 'headbutt', 'safari', 'give', 'fossil', 'item', 'time', 'tv', 'starter-was'}
+              'contest', 'coins', 'headbutt', 'safari', 'give', 'fossil', 'item', 'time', 'tv', 'starter-was', 'season', 'key'}
 KNOWN_FORM_HOW = {'unown', 'alph', 'cloak', 'evo-cloak', 'sea', 'evo-sea', 'trade-in', 'rotom-room', 'griseous',
-                  'gracidea', 'meteorite', 'plate', 'no-plate', 'spiky', 'default'}
-KNOWN_EXT = {'trade', 'gba', 'event', 'other'}
+                  'gracidea', 'meteorite', 'plate', 'no-plate', 'spiky', 'default', 'alph2', 'tanoby', 'xfer-in',
+                  'wild', 'rotom-mall', 'season', 'reveal-glass', 'dna-splicers', 'secret-sword', 'drive', 'from-games'}
+KNOWN_EXT = {'trade', 'gba', 'event', 'other', 'vc'}
 
 
 def check_game(gid, d, errors):
     exp = C.EXPECT[gid]
     err = lambda msg: errors.append(f'{gid}: {msg}')  # noqa: E731
     species = d['species']
-    if len(species) != C.NATIONAL_MAX or [s['id'] for s in species] != list(range(1, C.NATIONAL_MAX + 1)):
-        err(f'expected species 1..{C.NATIONAL_MAX}, got {len(species)}')
+    top = C.NAT_MAX[C.GAMES[gid]['gen']]
+    if len(species) != top or [s['id'] for s in species] != list(range(1, top + 1)) or d['game']['natMax'] != top:
+        err(f'expected species 1..{top}, got {len(species)}')
+    ids = {s['id'] for s in species}
+    for s in species:
+        for key in ('f', 'pa', 'ts'):
+            refs = [s.get(key)] if key == 'f' else [ev.get(key) for ev in s.get('ev', [])]
+            for r in refs:
+                if r is not None and r not in ids:
+                    err(f'{s["n"]}: {key} points to species {r}, which is not in this game')
+    if len(d['game']['periods']) not in (1, 3, 4):
+        err(f'unexpected periods {d["game"]["periods"]}')
     with_enc = sum(1 for s in species if s.get('e'))
     if with_enc < exp['species_with_encounters']:
         err(f'only {with_enc} species have encounters (expected at least {exp["species_with_encounters"]})')
@@ -76,8 +89,8 @@ def check_game(gid, d, errors):
                 err(f'{where}: unknown area')
             if e['m'] not in KNOWN_METHODS:
                 err(f'{where}: unknown method {e["m"]}')
-            if not e.get('g') and 't' not in e:
-                err(f'{where}: wild encounter without rates')
+            if not e.get('g') and set(e.get('t', {})) != set(d['game']['periods']):
+                err(f'{where}: wild encounter rates don\'t match the game\'s periods')
             for c in e.get('req', []):
                 check_cond(c, where)
             for g in e.get('gt', []) + [g for sp in e.get('sp', []) for g in sp.get('gt', [])]:
@@ -105,7 +118,7 @@ def check_game(gid, d, errors):
         for h in f['how']:
             if h['k'] not in KNOWN_FORM_HOW:
                 err(f'form {f["key"]}: unknown method {h}')
-            if h['k'] == 'plate' and str(h['i']) not in names['item']:
+            if h['k'] in ('plate', 'drive') and str(h['i']) not in names['item']:
                 err(f'form {f["key"]}: plate has no name')
         if not f['n'].get('en') or not f['n'].get('es'):
             err(f'form {f["key"]}: missing name')

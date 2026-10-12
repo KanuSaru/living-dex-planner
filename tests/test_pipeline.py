@@ -96,7 +96,11 @@ class GeneratedData(unittest.TestCase):
     def test_gen3_games(self):
         self.assertEqual(load('emerald')['game']['regionalSize'], 202)
         self.assertEqual(load('firered')['game']['regionalSize'], 151)
-        self.assertEqual(load('emerald')['forms'], [])
+        unown = [f for f in load('emerald')['forms'] if not f['def']]
+        self.assertEqual(len(unown), 27)  # no wild Unown in Hoenn: the letters come from FireRed/LeafGreen
+        self.assertTrue(all(f['ext'] == 'trade' for f in unown))
+        self.assertEqual({h['k'] for f in load('firered')['forms'] for h in f['how']} - {'default'}, {'tanoby'})
+        self.assertFalse(any(f['sp'] == 386 for f in load('firered')['forms']), 'Gen 3 shows Deoxys in one form only')
         espeon = next(s for s in load('firered')['species'] if s['id'] == 196)
         self.assertTrue(all(ev.get('ext') == 'trade' for ev in espeon['ev']), 'no clock in FireRed')
         deoxys = next(s for s in load('emerald')['species'] if s['id'] == 386)
@@ -105,9 +109,38 @@ class GeneratedData(unittest.TestCase):
     def test_index_marks_main_games(self):
         with open(os.path.join(GEN, 'data', 'index.json'), encoding='utf-8') as f:
             index = json.load(f)
-        mains = sorted(g['id'] for g in index['games'] if g['main'])
-        self.assertEqual(mains, ['diamond', 'heartgold', 'pearl', 'platinum', 'soulsilver'])
-        self.assertEqual(len(index['games']), 10)
+        self.assertTrue(all(g['main'] for g in index['games']))
+        self.assertEqual(len(index['games']), 21)
+        self.assertEqual([g['id'] for g in index['games'] if g.get('home')], ['home'])
+
+    def test_every_generation(self):
+        self.assertEqual(len(load('red')['species']), 151)
+        self.assertEqual(len(load('gold')['species']), 251)
+        self.assertEqual(len(load('black2')['species']), 649)
+        self.assertEqual(len(load('home')['species']), 1025)
+        self.assertIsNone(load('red')['game']['dayCareStage'])
+        self.assertEqual(load('red')['game']['boxes'], {'size': 20, 'cols': 5, 'count': 12})
+        self.assertEqual(load('home')['game']['boxes']['count'], 200)
+        pikachu = next(s for s in load('red')['species'] if s['id'] == 25)
+        self.assertNotIn('f', pikachu, 'Pichu is not in Gen 1')
+        crystal = {s['id']: s for s in load('crystal')['species']}
+        self.assertEqual(crystal[251]['e'][0]['ext'], ['vc'])
+        b2 = {f['key']: f for f in load('black2')['forms']}
+        self.assertEqual(b2['basculin-blue-striped']['how'], [{'k': 'wild'}])
+        self.assertEqual(b2['deerling-winter'].get('nobox'), 1)
+        self.assertNotIn('pichu-spiky-eared', b2)
+        home = {f['key']: f for f in load('home')['forms']}
+        self.assertNotIn('deerling-winter' in home and home['deerling-winter'].get('nobox'), [1])
+        self.assertEqual(home['arceus-fire'].get('nobox'), 1)
+
+    def test_unknown_areas_are_merged(self):
+        for g in ('black', 'black2'):
+            self.assertFalse(any('unknown' in a.get('sub', {}).get('en', '').lower() for a in load(g)['areas']), g)
+
+    def test_unova_names(self):
+        self.assertEqual(l10n.location_es('unova-route-4'), 'Ruta 4')
+        self.assertEqual(l10n.location_es('castelia-city'), 'Ciudad Porcelana')
+        self.assertEqual(l10n.sub_es('Hidden Grotto – Pond', {}), 'Claro oculto – estanque')
 
     def test_drifloon_friday_in_platinum(self):
         drifloon = next(s for s in load('platinum')['species'] if s['id'] == 425)

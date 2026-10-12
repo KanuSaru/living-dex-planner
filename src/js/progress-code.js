@@ -1,8 +1,9 @@
 // Compact, copyable progress codes: "LD1.<game>.<base64url bits>".
-// Bit i (0-based) is species i+1 for 1..493, then one bit per alternate form in data.forms order.
+// Bit i (0-based) is species i+1 for every species in the game (1..151 in Gen 1 … 1..493 in Gen 4, 1..1025 in HOME),
+// then one bit per alternate form in data.forms order.
 
-const NATIONAL = 493;
 const PREFIX = 'LD1';
+const speciesCount = (data) => data.game.natMax || data.species.length;
 
 function toB64url(bytes) {
   let bin = '';
@@ -18,6 +19,7 @@ function fromB64url(s) {
 const formKeys = (data) => data.forms.filter((f) => !f.def).map((f) => f.key);
 
 export function encodeProgress(data, caught) {
+  const NATIONAL = speciesCount(data);
   const keys = formKeys(data);
   const bits = NATIONAL + keys.length;
   const bytes = new Uint8Array(Math.ceil(bits / 8));
@@ -29,7 +31,7 @@ export function encodeProgress(data, caught) {
 
 // Returns { game } from a code without needing the game's data, or null if it isn't a code.
 export function peekProgress(code) {
-  const m = String(code || '').replace(/\s+/g, '').match(/^LD1\.([a-z]+)\.([A-Za-z0-9_-]+)$/);
+  const m = String(code || '').replace(/\s+/g, '').match(/^LD1\.([a-z0-9]+)\.([A-Za-z0-9_-]+)$/);
   return m ? { game: m[1], payload: m[2] } : null;
 }
 
@@ -38,6 +40,7 @@ export function decodeProgress(data, code) {
   if (!p || p.game !== data.game.id) return null;
   let bytes;
   try { bytes = fromB64url(p.payload); } catch { return null; }
+  const NATIONAL = speciesCount(data);
   const keys = formKeys(data);
   if (bytes.length !== Math.ceil((NATIONAL + keys.length) / 8)) return null;
   const has = (i) => (bytes[i >> 3] >> (i & 7)) & 1;

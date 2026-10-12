@@ -12,9 +12,13 @@ export function defaultLang() {
   try { return (navigator.language || '').toLowerCase().startsWith('es') ? 'es' : 'en'; } catch { return 'en'; }
 }
 
+// trade: two systems of the same kind; gba: a DS with a GBA slot (Pal Park, dual-slot);
+// bank: a 3DS with Poké Transporter and Pokémon Bank (to HOME); vc: Gen 1/2 games are the 3DS Virtual Console releases
+export const DEFAULT_HW = { trade: true, gba: true, bank: true, vc: false };
+
 export function freshState(defaultGame = 'platinum') {
   return { v: 2, lang: defaultLang(), game: defaultGame, tab: 'plan', hide: false, nowOpen: true,
-    areaSort: 'stage', boxTap: 'box', owned: [], hw: { trade: true, gba: true }, setupDone: false, games: {} };
+    areaSort: 'stage', boxTap: 'box', owned: [], hw: { ...DEFAULT_HW }, setupDone: false, games: {} };
 }
 
 export function gameState(state, gameId) {
@@ -33,6 +37,7 @@ export function gameState(state, gameId) {
 
 export function loadState(defaultGame) {
   const state = Object.assign(freshState(defaultGame), read(KEY) || {});
+  state.hw = { ...DEFAULT_HW, ...(state.hw || {}) };
   if (!read(KEY)) {
     const old = read(OLD_KEY); // version 1 was Platinum only
     if (old) {

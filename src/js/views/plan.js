@@ -1,12 +1,16 @@
 // Route plan tab: your-game settings, "catch right now", and the stage-by-stage plan.
 import { t } from '../i18n.js';
-import { esc, hasGate, lockChip, lockFor, lockText, pips, sourceCtx, spr, sprAt } from '../dom.js';
+import { esc, gameName, hasGate, hopsText, lockChip, lockFor, lockText, pips, sourceCtx, spr, sprAt } from '../dom.js';
 import { periodAt, weekdayAt } from '../planner.js';
 
 const STARTER_LABEL = ['plan.starter', 'plan.starter.kanto', 'plan.starter.hoenn'];
 
 function settings(ctx) {
   const { data, gs, T } = ctx;
+  if (data.game.home) {
+    return `<div class="panel settings"><h2 class="panel-h">${t('plan.home.title')}</h2><p class="note">${esc(t(ctx.M.sources.length ? 'plan.home.note' : 'plan.home.empty'))}</p>
+      <div class="row-btns"><button class="btn small" data-action="menu-open">${t('menu.button')}</button></div></div>`;
+  }
   let h = `<div class="panel settings"><h2 class="panel-h">${t('plan.yourGame')}</h2><div class="fields">`;
   data.game.starterGroups.forEach((grp, i) => {
     h += `<label class="field"><span>${t(STARTER_LABEL[i] || 'plan.starter')}</span><select id="starter-${i}" data-action="starter" data-group="${i}">`;
@@ -43,12 +47,14 @@ function gateList(ctx) {
 
 export function nowSection(ctx) {
   const { P, T, gs } = ctx;
+  if (!ctx.data.areas.length) return '';
   const date = ctx.now;
+  const clock = ctx.data.game.clock;
   const groups = P.catchNow({ date, wanted: (s) => ctx.inScope(s) && !ctx.caught.has(String(s.id)),
     isOpen: (story, gates) => !lockFor(ctx, { story, gates }) });
   const count = new Set(groups.flatMap((g) => g.items.map((i) => i.s.id))).size;
   const time = date.toLocaleTimeString(ctx.lang, { hour: '2-digit', minute: '2-digit' });
-  let h = `<details class="panel now" id="now" data-action="now-toggle" ${ctx.state.nowOpen ? 'open' : ''}><summary><span class="panel-h">${t('now.title')}</span><span class="now-when">${esc(t('now.when', { weekday: T.weekday(weekdayAt(date)), period: T.period(periodAt(date)), time }))}</span><span class="now-count">${count}</span></summary>`;
+  let h = `<details class="panel now" id="now" data-action="now-toggle" ${ctx.state.nowOpen ? 'open' : ''}><summary><span class="panel-h">${t('now.title')}</span><span class="now-when">${esc(clock ? t(clock.kind === 'season' ? 'now.when.season' : 'now.when', { weekday: T.weekday(weekdayAt(date)), period: T.period(periodAt(date, clock)), time }) : t('now.when.plain', { weekday: T.weekday(weekdayAt(date)), time }))}</span><span class="now-count">${count}</span></summary>`;
   h += `<p class="note">${count ? esc(t('now.summary', { n: count, areas: groups.length })) : esc(t('now.none'))} ${gs.progress == null ? esc(t('now.setProgress')) : ''} ${esc(t('now.special'))}</p>`;
   if (count) {
     h += '<div class="now-list">';
@@ -66,7 +72,8 @@ export function nowSection(ctx) {
 }
 
 function legend(ctx) {
-  return `<div class="legend"><span>${pips(ctx, 2)} ${t('legend.badges')}</span><span><span class="st evolve">${t('th.lv')} 14</span> ${t('legend.evolve')}</span><span><span class="st breed">${t('status.breed')}</span> ${t('legend.breed')}</span><span><span class="st ext">${t('ext.trade')}</span> ${t('legend.ext')}</span></div>`;
+  if (ctx.data.game.home) return '';
+  return `<div class="legend"><span>${pips(ctx, 2)} ${t('legend.badges')}</span><span><span class="st evolve">${t('th.lv')} 14</span> ${t('legend.evolve')}</span>${ctx.P.canBreed ? `<span><span class="st breed">${t('status.breed')}</span> ${t('legend.breed')}</span>` : ''}<span><span class="st ext">${t('ext.trade')}</span> ${t('legend.ext')}</span></div>`;
 }
 
 function targetChip(ctx, g, tg) {
@@ -139,13 +146,15 @@ function sourceSections(ctx, list) {
   for (const src of M.sources) {
     const sl = list.filter((s) => { const b = M.best(s.id); return b && b.where === src.id; });
     if (!sl.length) continue;
-    const via = src.gen === 3 ? 'palpark' : 'trade';
-    const later = !!lockFor(ctx, { story: 0, gates: via === 'palpark' && 'national-dex' in (ctx.data.game.gates || {}) ? ['national-dex'] : [] });
+    // the longest chain this game's Pokémon take (a Gen 2 Pokémon past #151 can't go back to Gen 1, so chains differ)
+    const first = sl.map((s) => M.best(s.id)).sort((a, b) => b.via.length - a.via.length)[0];
+    const later = !!lockFor(ctx, { story: 0, gates: first.gates });
     if (later && gs.onlyNow) continue;
     const sc = sourceCtx(ctx, src);
     const name = sc.T.game();
     const sp = src.P.planGroups(sl, ctx.caught);
-    body += `<section class="srcsec"><div class="src-h"><h2>${esc(t('plan.src.title', { game: name }))}</h2><span class="st xfer">${esc(t(`via.${via}`, { main }))}</span>${later ? `<span class="st later">${t('plan.locked')}</span>` : ''}<span class="cnt">${t('plan.pokemon', { n: sl.length })}</span></div><p class="note">${esc(t(`plan.src.${via}`, { game: name, main }))}</p>`;
+    const steps = first.via.map((h) => `<li>${esc(t(`hop.${h.k}`, { from: gameName(ctx, h.from), to: gameName(ctx, h.to) }))}${h.note ? ' ' + esc(t(`hop.note.${h.note}`)) : ''}</li>`).join('');
+    body += `<section class="srcsec"><div class="src-h"><h2>${esc(t('plan.src.title', { game: name }))}</h2><span class="st xfer">${esc(hopsText(ctx, first.via))}</span>${later ? `<span class="st later">${t('plan.locked')}</span>` : ''}<span class="cnt">${t('plan.pokemon', { n: sl.length })}</span></div><p class="note">${esc(t('plan.src.lede', { game: name, main }))}</p><ol class="hops">${steps}</ol>`;
     body += stagesHTML(sc, sp.stages, { small: true });
     if (sp.ext.length) {
       body += `<div class="area"><div class="root wide"><div class="root-body"><div class="root-t"><b>${esc(t('plan.src.starter', { game: name }))}</b></div><div class="targets">${chipList(ctx, sp.ext.map((x) => x.s))}</div></div></div></div>`;
@@ -156,7 +165,7 @@ function sourceSections(ctx, list) {
 }
 
 // with "Include forms" on in Boxes, forms caught the same way as their species need their own copy
-const COPY_KINDS = new Set(['unown', 'alph', 'cloak', 'evo-cloak']);
+const COPY_KINDS = new Set(['unown', 'alph', 'alph2', 'tanoby', 'cloak', 'evo-cloak', 'season']);
 function copyForms(ctx, list) {
   if (!ctx.gs.boxForms) return [];
   const ids = new Set(list.map((s) => s.id));
@@ -184,7 +193,7 @@ export function render(ctx) {
     const groups = {};
     for (const x of plan.ext) (groups[x.b.ext] ||= []).push(x);
     body += `<section class="stage"><div class="stage-h"><h2>${esc(t('plan.ext.title', { game }))}</h2><span class="cnt">${t('plan.pokemon', { n: plan.ext.length })}</span></div><div class="area">`;
-    for (const k of ['starter', 'trade', 'gba', 'other', 'event']) {
+    for (const k of ['starter', 'one', 'trade', 'gba', 'vc', 'other', 'event']) {
       if (!groups[k]) continue;
       body += `<div class="root wide"><div class="root-body"><div class="root-t"><b>${esc(T.extLong(k))}</b></div><div class="targets">${chipList(ctx, groups[k].map((x) => x.s))}</div></div></div>`;
     }

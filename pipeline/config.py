@@ -6,37 +6,81 @@ Adjust them here; the validate step fails the build if an area has no stage.
 """
 
 # ---------------------------------------------------------------- games ---
+# Every game can be the main game (where the living dex lives). 'home' is Pokémon HOME: no encounters of
+# its own, everything comes from the other games through the transfer chain.
 GAMES = {
-    'ruby':       {'version': 7,  'vg': 5,  'gen': 3, 'name': {'en': 'Ruby', 'es': 'Rubí'},             'region': 'hoenn',  'dex': 'hoenn', 'sprites': 'pt', 'short': 'R'},
-    'sapphire':   {'version': 8,  'vg': 5,  'gen': 3, 'name': {'en': 'Sapphire', 'es': 'Zafiro'},       'region': 'hoenn',  'dex': 'hoenn', 'sprites': 'pt', 'short': 'S'},
-    'emerald':    {'version': 9,  'vg': 6,  'gen': 3, 'name': {'en': 'Emerald', 'es': 'Esmeralda'},    'region': 'hoenn',  'dex': 'hoenn', 'sprites': 'pt', 'short': 'E'},
-    'firered':    {'version': 10, 'vg': 7,  'gen': 3, 'name': {'en': 'FireRed', 'es': 'Rojo Fuego'},   'region': 'kanto3', 'dex': 'kanto', 'sprites': 'pt', 'short': 'FR'},
-    'leafgreen':  {'version': 11, 'vg': 7,  'gen': 3, 'name': {'en': 'LeafGreen', 'es': 'Verde Hoja'}, 'region': 'kanto3', 'dex': 'kanto', 'sprites': 'pt', 'short': 'LG'},
+    'red':        {'version': 1,  'vg': 1,  'gen': 1, 'name': {'en': 'Red', 'es': 'Rojo'},               'region': 'kanto1', 'dex': 'kanto', 'sprites': 'rb', 'short': 'R'},
+    'blue':       {'version': 2,  'vg': 1,  'gen': 1, 'name': {'en': 'Blue', 'es': 'Azul'},              'region': 'kanto1', 'dex': 'kanto', 'sprites': 'rb', 'short': 'B'},
+    'yellow':     {'version': 3,  'vg': 2,  'gen': 1, 'name': {'en': 'Yellow', 'es': 'Amarillo'},        'region': 'kanto1', 'dex': 'kanto', 'sprites': 'y',  'short': 'Y', 'starters': []},
+    'gold':       {'version': 4,  'vg': 3,  'gen': 2, 'name': {'en': 'Gold', 'es': 'Oro'},               'region': 'johto2', 'dex': 'original-johto', 'sprites': 'gs', 'short': 'G'},
+    'silver':     {'version': 5,  'vg': 3,  'gen': 2, 'name': {'en': 'Silver', 'es': 'Plata'},           'region': 'johto2', 'dex': 'original-johto', 'sprites': 'gs', 'short': 'S'},
+    'crystal':    {'version': 6,  'vg': 4,  'gen': 2, 'name': {'en': 'Crystal', 'es': 'Cristal'},        'region': 'johto2', 'dex': 'original-johto', 'sprites': 'c',  'short': 'C'},
+    'ruby':       {'version': 7,  'vg': 5,  'gen': 3, 'name': {'en': 'Ruby', 'es': 'Rubí'},             'region': 'hoenn',  'dex': 'hoenn', 'sprites': 'rs', 'short': 'R'},
+    'sapphire':   {'version': 8,  'vg': 5,  'gen': 3, 'name': {'en': 'Sapphire', 'es': 'Zafiro'},       'region': 'hoenn',  'dex': 'hoenn', 'sprites': 'rs', 'short': 'S'},
+    'emerald':    {'version': 9,  'vg': 6,  'gen': 3, 'name': {'en': 'Emerald', 'es': 'Esmeralda'},    'region': 'hoenn',  'dex': 'hoenn', 'sprites': 'e',  'short': 'E'},
+    'firered':    {'version': 10, 'vg': 7,  'gen': 3, 'name': {'en': 'FireRed', 'es': 'Rojo Fuego'},   'region': 'kanto3', 'dex': 'kanto', 'sprites': 'frlg', 'short': 'FR'},
+    'leafgreen':  {'version': 11, 'vg': 7,  'gen': 3, 'name': {'en': 'LeafGreen', 'es': 'Verde Hoja'}, 'region': 'kanto3', 'dex': 'kanto', 'sprites': 'frlg', 'short': 'LG'},
     'diamond':    {'version': 12, 'vg': 8,  'gen': 4, 'badges': 'dp', 'name': {'en': 'Diamond', 'es': 'Diamante'},     'region': 'sinnoh', 'dex': 'original-sinnoh', 'sprites': 'dp',   'short': 'D'},
     'pearl':      {'version': 13, 'vg': 8,  'gen': 4, 'badges': 'dp', 'name': {'en': 'Pearl', 'es': 'Perla'},          'region': 'sinnoh', 'dex': 'original-sinnoh', 'sprites': 'dp',   'short': 'P'},
     'platinum':   {'version': 14, 'vg': 9,  'gen': 4, 'name': {'en': 'Platinum', 'es': 'Platino'},     'region': 'sinnoh', 'dex': 'extended-sinnoh', 'sprites': 'pt',   'short': 'Pt'},
     'heartgold':  {'version': 15, 'vg': 10, 'gen': 4, 'name': {'en': 'HeartGold', 'es': 'Oro HeartGold'}, 'region': 'johto', 'dex': 'updated-johto', 'sprites': 'hgss', 'short': 'HG'},
     'soulsilver': {'version': 16, 'vg': 10, 'gen': 4, 'name': {'en': 'SoulSilver', 'es': 'Plata SoulSilver'}, 'region': 'johto', 'dex': 'updated-johto', 'sprites': 'hgss', 'short': 'SS'},
+    'black':      {'version': 17, 'vg': 11, 'gen': 5, 'name': {'en': 'Black', 'es': 'Negro'},          'region': 'unova',  'dex': 'original-unova', 'sprites': 'bw', 'short': 'B'},
+    'white':      {'version': 18, 'vg': 11, 'gen': 5, 'name': {'en': 'White', 'es': 'Blanco'},         'region': 'unova',  'dex': 'original-unova', 'sprites': 'bw', 'short': 'W'},
+    'black2':     {'version': 21, 'vg': 14, 'gen': 5, 'name': {'en': 'Black 2', 'es': 'Negro 2'},      'region': 'unova2', 'dex': 'updated-unova',  'sprites': 'bw', 'short': 'B2'},
+    'white2':     {'version': 22, 'vg': 14, 'gen': 5, 'name': {'en': 'White 2', 'es': 'Blanco 2'},     'region': 'unova2', 'dex': 'updated-unova',  'sprites': 'bw', 'short': 'W2'},
+    'home':       {'version': None, 'vg': 14, 'gen': 9, 'home': True, 'name': {'en': 'Pokémon HOME', 'es': 'Pokémon HOME'}, 'region': 'home', 'dex': None, 'sprites': 'home', 'short': 'HOME'},
 }
 DEFAULT_GAME = 'platinum'
 
+# highest National Dex number per generation; HOME holds every species
+NAT_MAX = {1: 151, 2: 251, 3: 386, 4: 493, 5: 649, 9: 1025}
+NATIONAL_MAX = 1025
+
+# Sprite sets: folder under sprites/pokemon/versions/ (or sprites/pokemon/) and how many species they cover.
 SPRITE_SETS = {
-    'dp': 'diamond-pearl',
-    'pt': 'platinum',
-    'hgss': 'heartgold-soulsilver',
+    'rb':   ('generation-i/red-blue/transparent', 151),
+    'y':    ('generation-i/yellow/transparent', 151),
+    'gs':   ('generation-ii/gold/transparent', 251),
+    'c':    ('generation-ii/crystal/transparent', 251),
+    'rs':   ('generation-iii/ruby-sapphire', 386),
+    'e':    ('generation-iii/emerald', 386),
+    'frlg': ('generation-iii/firered-leafgreen', 386),
+    'dp':   ('generation-iv/diamond-pearl', 493),
+    'pt':   ('generation-iv/platinum', 493),
+    'hgss': ('generation-iv/heartgold-soulsilver', 493),
+    'bw':   ('generation-v/black-white', 649),
+    'home': ('generation-v/black-white', 1025),
 }
 SPRITE_COLS = 25
-SPRITE_CELL = 80
-NATIONAL_MAX = 493
+
+# PC boxes per generation: (slots per box, columns, number of boxes)
+BOXES = {1: (20, 5, 12), 2: (20, 5, 14), 3: (30, 6, 14), 4: (30, 6, 18), 5: (30, 6, 24), 9: (30, 6, 200)}
+
+# In-game clock: Gen 2 and Gen 4 have morning/day/night, Gen 5 has seasons, Gen 1 and Gen 3 have neither for encounters.
+CLOCKS = {
+    1: None,
+    2: {'kind': 'tod', 'hours': [4, 10, 18]},
+    3: None,
+    4: {'kind': 'tod', 'hours': [4, 10, 20]},
+    5: {'kind': 'season'},
+    9: None,
+}
 
 # Species that come only from distributions in every Gen 4 game.
 EVENT_SPECIES = {491, 492, 493}
-# Places only reachable with an event ticket (Gen 3)
+# Places only reachable with an event ticket
 EVENT_LOCATIONS = {'birth-island', 'navel-rock', 'faraway-island', 'southern-island', 'hoenn-pokecenter',
-                   'kanto-pokecenter', 'sinnoh-pokemart', 'johto-pokemart'}
+                   'kanto-pokecenter', 'sinnoh-pokemart', 'johto-pokemart', 'liberty-garden'}
 
 # Expected minimum sizes; validate.py fails the build if the data drops below these.
 EXPECT = {
+    'red':        {'species_with_encounters': 100, 'areas': 60,  'regional': 151},
+    'blue':       {'species_with_encounters': 100, 'areas': 60,  'regional': 151},
+    'yellow':     {'species_with_encounters': 100, 'areas': 60,  'regional': 151},
+    'gold':       {'species_with_encounters': 140, 'areas': 110, 'regional': 251},
+    'silver':     {'species_with_encounters': 140, 'areas': 110, 'regional': 251},
+    'crystal':    {'species_with_encounters': 160, 'areas': 110, 'regional': 251},
     'ruby':       {'species_with_encounters': 120, 'areas': 95,  'regional': 202},
     'sapphire':   {'species_with_encounters': 120, 'areas': 95,  'regional': 202},
     'emerald':    {'species_with_encounters': 145, 'areas': 105, 'regional': 202},
@@ -47,6 +91,11 @@ EXPECT = {
     'platinum':   {'species_with_encounters': 280, 'areas': 155, 'regional': 210},
     'heartgold':  {'species_with_encounters': 275, 'areas': 160, 'regional': 256},
     'soulsilver': {'species_with_encounters': 275, 'areas': 160, 'regional': 256},
+    'black':      {'species_with_encounters': 230, 'areas': 70,  'regional': 156},
+    'white':      {'species_with_encounters': 230, 'areas': 70,  'regional': 156},
+    'black2':     {'species_with_encounters': 285, 'areas': 110, 'regional': 301},
+    'white2':     {'species_with_encounters': 285, 'areas': 110, 'regional': 301},
+    'home':       {'species_with_encounters': 0,   'areas': 0,   'regional': 0},
 }
 
 # --------------------------------------------------------------- regions ---
@@ -145,7 +194,6 @@ REGIONS = {
         'held_item_stage': 4,
         'beauty': True, 'beauty_stage': 5,   # Pokéblocks
         'clock': True,
-        'forms': False,
         'starter_groups': [[252, 255, 258]],
         'gates': {'cut': 1, 'rock-smash': 3, 'strength': 4, 'surf': 5, 'dive': 7, 'waterfall': 8,
                   'mach-bike': 2, 'acro-bike': 2, 'devon-scope': 5, 'wailmer-pail': 5,
@@ -201,7 +249,6 @@ REGIONS = {
         'held_item_stage': 5,
         'beauty': False,
         'clock': False,              # no clock: Espeon and Umbreon can't evolve
-        'forms': False,
         'starter_groups': [[1, 4, 7]],
         'gates': {'cut': 2, 'strength': 4, 'surf': 5, 'rock-smash': 7, 'waterfall': 9, 'poke-flute': 4,
                   'silph-scope': 4, 'old-rod': 2, 'good-rod': 5, 'super-rod': 5, 'national-dex': 9},
@@ -240,7 +287,7 @@ REGIONS = {
         'location_default_stage': 9,
         'areas': {},
         'west': set(),
-        'unown': None,
+        'unown': 'tanoby',
     },
     'johto': {
         'id': 2,
@@ -298,11 +345,170 @@ REGIONS = {
     },
 }
 
+BW_BADGES = [('Trio', 'Trío'), ('Basic', 'Base'), ('Insect', 'Élitro'), ('Bolt', 'Voltio'), ('Quake', 'Temblor'),
+             ('Jet', 'Jet'), ('Freeze', 'Candelizo'), ('Legend', 'Leyenda')]
+B2W2_BADGES = [('Basic', 'Base'), ('Toxic', 'Ponzoña'), ('Insect', 'Élitro'), ('Bolt', 'Voltio'), ('Quake', 'Temblor'),
+               ('Jet', 'Jet'), ('Legend', 'Leyenda'), ('Wave', 'Ola')]
+POST_LEAGUE = {'en': 'Post-game', 'es': 'Posjuego', 'tag_en': 'After the Elite Four', 'tag_es': 'Tras el Alto Mando', 'pips': 8, 'post': True}
+
+# Red, Blue and Yellow
+REGIONS['kanto1'] = {
+    'id': 1,
+    'stages': _badge_stages(KANTO_BADGES) + [POST_LEAGUE],
+    'level_caps': [14, 21, 24, 29, 43, 43, 47, 50, 65],
+    'day_care_stage': None,      # the Route 5 Day Care raises Pokémon but there are no eggs in Gen 1
+    'use_item_stage': 3,         # Celadon Department Store
+    'held_item_stage': 9,
+    'beauty': False,
+    'clock': False,
+    'forms': False,
+    'starter_groups': [[1, 4, 7]],
+    'gates': {'cut': 2, 'strength': 5, 'surf': 5, 'old-rod': 2, 'good-rod': 4, 'super-rod': 4,
+              'poke-flute': 4, 'silph-scope': 4},
+    'method_gates': {'surf': ['surf'], 'old-rod': ['old-rod'], 'good-rod': ['good-rod'], 'super-rod': ['super-rod'],
+                     'pokeflute': ['poke-flute']},
+    'area_gates': {
+        ('kanto-route-9', None): ['cut'], ('kanto-route-10', None): ['cut'], ('rock-tunnel', None): ['cut'],
+        ('pokemon-tower', None): ['silph-scope'], ('seafoam-islands', None): ['surf', 'strength'],
+        ('cinnabar-island', None): ['surf'], ('pokemon-mansion', None): ['surf'], ('kanto-power-plant', None): ['surf'],
+        ('cerulean-cave', None): ['surf'], ('kanto-victory-road-2', None): ['strength'],
+        ('kanto-sea-route-19', None): ['surf'], ('kanto-sea-route-20', None): ['surf'],
+    },
+    'locations': {
+        'pallet-town': 0, 'kanto-route-1': 0, 'viridian-city': 0, 'kanto-route-22': 0, 'kanto-route-2': 0,
+        'viridian-forest': 0, 'pewter-city': 0,
+        'kanto-route-3': 1, 'mt-moon': 1, 'kanto-route-4': 1, 'cerulean-city': 1,
+        'kanto-route-24': 2, 'kanto-route-25': 2, 'kanto-route-5': 2, 'kanto-route-6': 2, 'vermilion-city': 2,
+        'digletts-cave': 2, 'kanto-route-11': 2, 'kanto-route-9': 2, 'kanto-route-10': 2, 'rock-tunnel': 2,
+        'kanto-underground-path': 2,
+        'kanto-route-8': 3, 'kanto-route-7': 3, 'celadon-city': 3, 'lavender-town': 3,
+        'pokemon-tower': 4, 'kanto-route-12': 4, 'kanto-route-13': 4, 'kanto-route-14': 4, 'kanto-route-15': 4,
+        'kanto-route-16': 4, 'kanto-route-17': 4, 'kanto-route-18': 4, 'fuchsia-city': 4, 'kanto-safari-zone': 4,
+        'saffron-city': 5, 'kanto-sea-route-19': 5, 'kanto-sea-route-20': 5, 'kanto-sea-route-21': 5,
+        'seafoam-islands': 5, 'cinnabar-island': 5, 'pokemon-mansion': 5, 'kanto-power-plant': 5,
+        'kanto-route-23': 8, 'kanto-victory-road-2': 8,
+        'cerulean-cave': 9,
+    },
+    'areas': {('kanto-route-4', 'pokemon-center'): 1},
+    'west': set(),
+    'unown': None,
+}
+
+# Gold, Silver and Crystal: Johto as in HeartGold/SoulSilver, without the HGSS-only places and items
+REGIONS['johto2'] = dict(REGIONS['johto'],
+    level_caps=[9, 16, 20, 25, 30, 35, 35, 40, 50, 81],
+    starter_groups=[[152, 155, 158]],
+    gates={'cut': 2, 'headbutt': 2, 'strength': 3, 'rock-smash': 3, 'squirt-bottle': 3, 'surf': 4,
+           'whirlpool': 7, 'waterfall': 8, 'old-rod': 1, 'good-rod': 3, 'super-rod': 9, 'poke-flute': 9,
+           'time-capsule': 3},
+    method_gates={'surf': ['surf'], 'old-rod': ['old-rod'], 'good-rod': ['good-rod'], 'super-rod': ['super-rod'],
+                  'headbutt-low': ['headbutt'], 'headbutt-normal': ['headbutt'], 'headbutt-high': ['headbutt'],
+                  'rock-smash': ['rock-smash'], 'pokeflute': ['poke-flute'], 'squirt-bottle': ['squirt-bottle']},
+    cond_stage={'swarm': 0},     # Gen 2 swarms come from phone calls during the story
+    unown='gsc',
+)
+
+UNOVA_GATES_METHODS = {'surf': ['surf'], 'surf-spots': ['surf'], 'super-rod': ['super-rod'],
+                       'super-rod-spots': ['super-rod']}
+
+# Black and White
+REGIONS['unova'] = {
+    'id': 5,
+    'stages': _badge_stages(BW_BADGES) + [
+        {'en': 'Post-game', 'es': 'Posjuego', 'tag_en': 'After the Hall of Fame', 'tag_es': 'Tras el Salón de la Fama', 'pips': 8, 'post': True}],
+    'level_caps': [14, 20, 23, 27, 31, 35, 39, 43, 54],
+    'day_care_stage': 1,         # Route 3
+    'use_item_stage': 3,
+    'held_item_stage': 5,
+    'beauty': False,             # no contests: Milotic needs a Prism Scale trade
+    'clock': True,
+    'starter_groups': [[495, 498, 501]],
+    # Gen 5 needs no badges for field moves: these are the points where you get each HM or item
+    'gates': {'cut': 1, 'strength': 4, 'surf': 6, 'waterfall': 6, 'dive': 9, 'super-rod': 9, 'poke-transfer': 9},
+    'method_gates': UNOVA_GATES_METHODS,
+    'area_gates': {
+        ('unova-route-17', None): ['surf'], ('unova-route-18', None): ['surf'], ('p2-laboratory', None): ['surf'],
+        ('undella-bay', None): ['surf'],
+    },
+    'locations': {
+        'nuvema-town': 0, 'unova-route-1': 0, 'accumula-town': 0, 'unova-route-2': 0, 'striaton-city': 0, 'dreamyard': 0,
+        'unova-route-3': 1, 'wellspring-cave': 1, 'nacrene-city': 1,
+        'pinwheel-forest': 2, 'skyarrow-bridge': 2, 'castelia-city': 2,
+        'unova-route-4': 3, 'desert-resort': 3, 'relic-castle': 3, 'nimbasa-city': 3, 'anville-town': 3,
+        'unova-route-5': 4, 'driftveil-drawbridge': 4, 'driftveil-city': 4, 'cold-storage': 4, 'unova-route-16': 4,
+        'lostlorn-forest': 4,
+        'unova-route-6': 5, 'chargestone-cave': 5, 'mistralton-city': 5, 'unova-route-7': 5, 'celestial-tower': 5,
+        'unova-route-17': 6, 'unova-route-18': 6, 'p2-laboratory': 6, 'mistralton-cave': 6, 'guidance-chamber': 6,
+        'twist-mountain': 6, 'icirrus-city': 6,
+        'dragonspiral-tower': 7, 'unova-route-8': 7, 'moor-of-icirrus': 7, 'tubeline-bridge': 7, 'unova-route-9': 7,
+        'opelucid-city': 7,
+        'unova-route-10': 8, 'unova-victory-road': 8, 'ns-castle': 8, 'trial-chamber': 8,
+        'unova-route-11': 9, 'village-bridge': 9, 'unova-route-12': 9, 'lacunosa-town': 9, 'unova-route-13': 9,
+        'giant-chasm': 9, 'undella-town': 9, 'undella-bay': 9, 'unova-route-14': 9, 'abundant-shrine': 9,
+        'unova-route-15': 9, 'marvelous-bridge': 9, 'challengers-cave': 9, 'liberty-garden': 9,
+    },
+    'areas': {('pinwheel-forest', 'rumination-field'): 6},
+    'west': set(),
+    'unown': None,
+    # Black and White reopen early places in the post-game with much stronger Pokémon (dark grass, rippling water):
+    # wild encounters far above the gym levels count as later in the story
+    'level_hints': True,
+}
+
+# Black 2 and White 2: the old Unova areas open after the Hall of Fame (Skyarrow Bridge is closed until then)
+REGIONS['unova2'] = dict(REGIONS['unova'],
+    stages=_badge_stages(B2W2_BADGES) + [REGIONS['unova']['stages'][-1]],
+    level_caps=[13, 18, 24, 30, 33, 39, 48, 51, 59],
+    day_care_stage=9,            # Route 3, past Skyarrow Bridge
+    gates={'cut': 1, 'strength': 2, 'surf': 5, 'dive': 6, 'waterfall': 8, 'super-rod': 9, 'poke-transfer': 9},
+    area_gates={('unova-route-17', None): ['surf'], ('unova-route-18', None): ['surf'], ('p2-laboratory', None): ['surf'],
+                ('undella-bay', None): ['surf'], ('underground-ruins', None): ['surf']},
+    locations={
+        'aspertia-city': 0, 'unova-route-19': 0, 'floccesy-town': 0, 'unova-route-20': 0, 'floccesy-ranch': 0,
+        'virbank-city': 1, 'virbank-complex': 1,
+        'castelia-city': 2, 'castelia-sewers': 2,
+        'unova-route-4': 3, 'desert-resort': 3, 'relic-castle': 3, 'nimbasa-city': 3, 'anville-town': 3,
+        'unova-route-16': 3, 'lostlorn-forest': 3,
+        'unova-route-5': 4, 'driftveil-drawbridge': 4, 'driftveil-city': 4,
+        'relic-passage': 5, 'unova-route-6': 5, 'mistralton-cave': 5, 'chargestone-cave': 5, 'mistralton-city': 5,
+        'unova-route-7': 5, 'celestial-tower': 5,
+        'lentimas-town': 6, 'strange-house': 6, 'reversal-mountain': 6, 'undella-town': 6, 'undella-bay': 6,
+        'unova-route-13': 6, 'lacunosa-town': 6, 'unova-route-12': 6, 'village-bridge': 6, 'unova-route-11': 6,
+        'opelucid-city': 6, 'unova-route-9': 6,
+        'humilau-city': 7, 'unova-route-22': 7,
+        'unova-route-21': 8, 'seaside-cave': 8, 'giant-chasm': 8, 'unova-route-23': 8, 'unova-victory-road-2': 8,
+        'unova-victory-road': 8,
+        'clay-tunnel': 9, 'underground-ruins': 9, 'rocky-mountain-room': 9, 'glacier-room': 9, 'iron-room': 9,
+        'unova-route-14': 9, 'abundant-shrine': 9, 'unova-route-15': 9, 'marvelous-bridge': 9, 'unova-route-8': 9,
+        'moor-of-icirrus': 9, 'icirrus-city': 9, 'dragonspiral-tower': 9, 'twist-mountain': 9, 'pinwheel-forest': 9,
+        'nacrene-city': 9, 'unova-route-3': 9, 'wellspring-cave': 9, 'striaton-city': 9, 'dreamyard': 9,
+        'unova-route-2': 9, 'accumula-town': 9, 'unova-route-1': 9, 'unova-route-17': 9, 'unova-route-18': 9,
+        'p2-laboratory': 9, 'nuvema-town': 9, 'nature-sanctuary': 9, 'guidance-chamber': 9,
+    },
+    areas={('giant-chasm', 'forest'): 9, ('giant-chasm', 'forest-cave'): 9, ('giant-chasm', 'hidden-grotto'): 9,
+           ('reversal-mountain', 'b1f'): 9},
+)
+
+# Pokémon HOME: storage only. Everything arrives from your games.
+REGIONS['home'] = {
+    'id': None,
+    'stages': [{'en': 'Any time', 'es': 'En cualquier momento', 'tag_en': 'Pokémon HOME', 'tag_es': 'Pokémon HOME', 'pips': 0}],
+    'level_caps': [], 'day_care_stage': None, 'use_item_stage': 0, 'held_item_stage': 0, 'beauty': False,
+    'clock': False, 'starter_groups': [], 'gates': {}, 'method_gates': {}, 'area_gates': {}, 'locations': {},
+    'areas': {}, 'west': set(), 'unown': None,
+}
+
+# Places in another region that PokéAPI lists for a game by mistake
+OFF_REGION_OK = {'kanto1': {1}, 'johto2': {1, 2}, 'unova': {5}, 'unova2': {5}}
+
 # ------------------------------------------------------------ conditions ---
 # Every encounter condition value the games use must be handled here or validate.py fails.
 # kind -> (stage per region, external requirement)
 COND_DEFAULT_IDS = {'story-progress-before-national-dex', 'great-marsh-daily-slot-none', 'backlot-not-mentioned',
-                    'johto-safari-blocks-inactive', 'bug-catching-contest-no'}
+                    'johto-safari-blocks-inactive', 'bug-catching-contest-no',
+                    # a second chance at a legendary you knocked out: not a separate way to get it
+                    'special-encounter-couldnt-capture-before'}
+SEASONS = {'season-spring': 'sp', 'season-summer': 'su', 'season-autumn': 'au', 'season-winter': 'wi'}
 
 STORY_STAGE = {
     'beat-elite-four-round-two': 9,
@@ -312,6 +518,8 @@ STORY_STAGE = {
     # Johto
     'zephyr-badge': 1, 'awakened-beasts': 3, 'beat-red': 10, 'receive-tm-from-claire': 8,
     'returned-machine-part': 9, 'vermilion-copycat': 9,
+    # Unova
+    'juniper-cave-of-being': 9, 'quake-badge': 5, 'defeated-ghetsis': 9,
 }
 OTHER_STAGE = {
     'talked-to-32-people-underground': (2, None),
@@ -323,15 +531,23 @@ OTHER_STAGE = {
     'received-kanto-starter': (10, None),
     'snorlax-11-beat-league': (9, None),
     'first-party-pokemon-high-friendship': (0, None),
+    'virtual-console': (9, 'vc'),            # Crystal's GS Ball event, only in the 3DS Virtual Console release
+    'captured-reshiram-or-zekrom': (9, None),
 }
-ITEM_STAGE = {'odd-keystone': 2, 'adamant-orb': 9, 'lustrous-orb': 9}
-FOSSIL_STAGE = {'sinnoh': 1, 'johto': 9, 'hoenn': 4, 'kanto3': 5}
+ITEM_STAGE = {'odd-keystone': 2, 'adamant-orb': 9, 'lustrous-orb': 9, 'ice-key': 9, 'iron-key': 9, 'lunar-wing': 9,
+              'light-stone': 9, 'dark-stone': 9}
+FOSSIL_STAGE = {'sinnoh': 1, 'johto': 9, 'hoenn': 4, 'kanto3': 5, 'kanto1': 5, 'johto2': 9, 'unova': 3, 'unova2': 3}
+# Black 2 unlocks the Iron Key (Registeel) and White 2 the Iceberg Key (Regice); the other key comes from the
+# other version through the Key System.
+OTHER_VERSION_KEY = {('black2', 'ice-key'), ('white2', 'iron-key')}
 
 
 def parse_condition(ident, region):
     """Map a PokéAPI encounter condition value to (cond, stage, ext). Returns None for defaults/time."""
-    if ident in COND_DEFAULT_IDS or ident.startswith('time-'):
+    if ident in COND_DEFAULT_IDS or ident.startswith('time-') or ident in SEASONS:
         return None
+    if ident == 'defeated-ghetsis':
+        return {'k': 'story', 'v': ident}, STORY_STAGE[ident], None
     if ident == 'swarm-yes':
         return {'k': 'swarm'}, 9, None
     if ident == 'radar-on':
@@ -380,6 +596,8 @@ def parse_condition(ident, region):
         return {'k': 'give', 'v': ident[6:]}, 0, None
     if ident.startswith('item-'):
         key = ident[5:]
+        if key in ('ice-key', 'iron-key'):
+            return {'k': 'key', 'v': key}, ITEM_STAGE[key], None
         if key.endswith('fossil') or key == 'old-amber':
             return {'k': 'fossil', 'v': key}, FOSSIL_STAGE[region], None
         if key not in ITEM_STAGE:
@@ -397,6 +615,23 @@ EXTRA_WEEKDAY = {('platinum', 425, 'valley-windworks'): 'friday'}
 
 # ----------------------------------------------------------------- forms ---
 # Forms that exist only in battle are skipped automatically (is_battle_only in PokéAPI).
-SKIP_FORMS = {'arceus-unknown', 'castform', 'cherrim-overcast'}
+SKIP_FORMS = {'arceus-unknown', 'castform', 'cherrim-overcast',
+              # gender differences, not forms
+              'frillish-male', 'frillish-female', 'jellicent-male', 'jellicent-female'}
+# Spiky-eared Pichu can't leave Gen 4 (Poké Transfer refuses it)
+GEN4_ONLY_FORMS = {'pichu-spiky-eared'}
 # Forms that revert when deposited in the PC in Gen 4, so they can't be part of a living dex box.
 NOT_BOXABLE = {'shaymin-sky'}
+# Gen 5: Deerling and Sawsbuck follow the season, and a fused Kyurem uses up your Reshiram or Zekrom
+NOT_BOXABLE_GEN5 = {'deerling-summer', 'deerling-autumn', 'deerling-winter', 'sawsbuck-summer', 'sawsbuck-autumn',
+                    'sawsbuck-winter', 'kyurem-black', 'kyurem-white', 'shaymin-sky'}
+# Pokémon HOME strips held items and refuses fused Pokémon, so these forms can't be stored there
+NOT_BOXABLE_HOME = {'shaymin-sky', 'kyurem-black', 'kyurem-white', 'giratina-origin'} | {
+    f'arceus-{t}' for t in ('fighting', 'flying', 'poison', 'ground', 'rock', 'bug', 'ghost', 'steel', 'fire', 'water',
+                            'grass', 'electric', 'psychic', 'ice', 'dragon', 'dark')} | {
+    f'genesect-{d}' for d in ('douse', 'shock', 'burn', 'chill')}
+# HOME tracks forms up to Black 2 / White 2 for now (version group 14)
+HOME_FORMS_UP_TO_VG = 14
+# Evolutions that one game blocks: (game, species) -> external requirement.
+# Yellow's starter Pikachu refuses the Thunder Stone and there is no other Pikachu to catch.
+EVO_EXT = {('yellow', 26): 'trade'}
