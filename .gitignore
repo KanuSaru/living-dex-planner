@@ -1,0 +1,8 @@
+pokeapi-src/
+sprites-src/
+generated/
+site/
+dist/
+node_modules/
+__pycache__/
+*.pyc

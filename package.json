@@ -1,0 +1,13 @@
+{
+  "name": "gen4-living-dex",
+  "private": true,
+  "type": "module",
+  "description": "Living dex planner for Pokémon Diamond, Pearl, Platinum, HeartGold and SoulSilver, built from PokéAPI data.",
+  "scripts": {
+    "test": "node --test tests/planner.test.mjs tests/text.test.mjs tests/progress.test.mjs",
+    "availability": "node scripts/availability.mjs generated"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
